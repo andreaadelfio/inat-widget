@@ -144,34 +144,25 @@
           <input id="source" name="source" value="andreaadelfio" required>
         </div>
 
-        <div class="row-2">
-          <div class="row">
-            <label for="sourceType">Source Type</label>
-            <select id="sourceType" name="sourceType">
-              <option value="user">user</option>
-              <option value="project">project</option>
-              <option value="place">place</option>
-              <option value="taxon">taxon</option>
-              <option value="observation">observation</option>
-            </select>
-          </div>
-          <div class="row">
-            <label for="mode">Mode</label>
-            <select id="mode" name="mode">
-              <option value="extended" selected>extended</option>
-              <option value="compact">compact</option>
-            </select>
-          </div>
+        <div class="row">
+          <label for="sourceType">Source Type</label>
+          <select id="sourceType" name="sourceType">
+            <option value="user">user</option>
+            <option value="project">project</option>
+            <option value="place">place</option>
+            <option value="taxon">taxon</option>
+            <option value="observation">observation</option>
+          </select>
         </div>
 
         <div class="row-2">
           <div class="row">
             <label for="photoSize">Photo Size</label>
             <select id="photoSize" name="photoSize">
-              <option value="auto">auto</option>
+              <option value="auto" selected>auto</option>
               <option value="square">square</option>
               <option value="small">small</option>
-              <option value="medium" selected>medium</option>
+              <option value="medium">medium</option>
               <option value="large">large</option>
             </select>
           </div>
@@ -264,8 +255,7 @@
       const defaults = {
         source: 'andreaadelfio',
         sourceType: 'user',
-        mode: 'extended',
-        photoSize: 'medium',
+        photoSize: 'auto',
         limit: '10',
         theme: 'light',
         title: 'View my observations on',
@@ -295,7 +285,6 @@
       function setForm(values){
         form.source.value = values.source;
         form.sourceType.value = values.sourceType;
-        form.mode.value = values.mode;
         form.photoSize.value = values.photoSize;
         form.limit.value = values.limit;
         form.theme.value = values.theme;
@@ -311,7 +300,6 @@
         return {
           source: form.source.value.trim(),
           sourceType: form.sourceType.value.trim(),
-          mode: form.mode.value.trim(),
           photoSize: form.photoSize.value.trim(),
           limit: form.limit.value.trim(),
           theme: form.theme.value.trim(),
@@ -330,7 +318,6 @@
           '  data-inat-widget',
           `  data-inat-source="${escapeAttr(opts.source)}"`,
           `  data-inat-source-type="${escapeAttr(opts.sourceType)}"`,
-          `  data-inat-mode="${escapeAttr(opts.mode)}"`,
           `  data-inat-photo-size="${escapeAttr(opts.photoSize)}"`,
           `  data-inat-limit="${escapeAttr(opts.limit)}"`,
           `  data-inat-theme="${escapeAttr(opts.theme)}"`,

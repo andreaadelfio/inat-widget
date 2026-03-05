@@ -148,10 +148,6 @@
   transition:transform 0.2s ease;
 }
 
-.inat-mode-extended .inat-w-grid-item:hover .inat-w-grid-img{
-  transform:scale(1.04);
-}
-
 .inat-w-grid-overlay{
   position:absolute;
   left:0;
@@ -164,7 +160,17 @@
   transition:opacity 0.2s ease;
 }
 
-.inat-mode-extended .inat-w-grid-item:hover .inat-w-grid-overlay{
+@media(hover:hover){
+  .inat-w-grid-item:hover .inat-w-grid-img{
+    transform:scale(1.04);
+  }
+
+  .inat-w-grid-item:hover .inat-w-grid-overlay{
+    opacity:1;
+  }
+}
+
+.inat-w-grid-item:focus-visible .inat-w-grid-overlay{
   opacity:1;
 }
 

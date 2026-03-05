@@ -18,19 +18,19 @@ Widget JavaScript/CSS standalone per mostrare osservazioni iNaturalist.
   data-inat-widget
   data-inat-source="andreaadelfio"
   data-inat-source-type="user"
-  data-inat-mode="extended"
   data-inat-theme="light"
   data-inat-limit="10"
 ></div>
 ```
 
-## Modalita
+## Comportamento responsive
 
-- `data-inat-mode="compact"`
-  - sempre compatta, sia mobile che desktop.
-- `data-inat-mode="extended"`
-  - estesa su desktop/laptop.
-  - su mobile (`<=760px`) collassa automaticamente in compatta.
+- Esiste una sola modalita.
+- Il widget e sempre "extended", ma diventa automaticamente piu compatto quando lo schermo si restringe.
+- Schermo piu stretto:
+  - tile piu piccole
+  - piu colonne nella griglia
+  - gap ridotto
 
 ## Attributi principali
 
@@ -39,7 +39,6 @@ Widget JavaScript/CSS standalone per mostrare osservazioni iNaturalist.
 | `data-inat-widget` | - | abilita widget |
 | `data-inat-source` | - | username/id/URL in base al source type |
 | `data-inat-source-type` | `user` | `user`, `project`, `place`, `taxon`, `observation` |
-| `data-inat-mode` | `extended` | `compact`, `extended` |
 | `data-inat-theme` | `light` | `light`, `dark`, `transparent-light`, `transparent-dark` |
 | `data-inat-photo-size` | `auto` | `auto`, `square`, `small`, `medium`, `large` |
 | `data-inat-limit` | `10` | intero `1..50` |
@@ -65,6 +64,5 @@ Nota su `data-inat-photo-size`:
 ## Playground
 
 Apri `test-widget.html` per provare:
-- mode compact/extended
 - larghezza preview mobile/tablet/laptop
 - photo size e altri parametri

@@ -1,15 +1,14 @@
 /**
- * iNaturalist Widget (simple rebuild)
- * Modes:
- * - compact: always compact (mobile and desktop)
- * - extended: desktop extended, mobile collapses to compact
+ * iNaturalist Widget
+ * Single responsive mode:
+ * - wider screen: larger tiles, fewer columns
+ * - narrower screen: smaller tiles, more columns
  */
 (function(){
   'use strict';
 
   const INAT_API = 'https://api.inaturalist.org/v1';
   const STYLESHEET_ID = 'inat-widget-custom-stylesheet';
-  const MOBILE_BREAKPOINT = 760;
 
   function resolveStylesheetHref(){
     const script = document.currentScript
@@ -43,7 +42,6 @@
 
       this.source = this.readString('inatSource');
       this.sourceType = this.readEnum('inatSourceType', ['user', 'project', 'place', 'taxon', 'observation'], 'user');
-      this.mode = this.readEnum('inatMode', ['compact', 'extended'], 'extended');
       this.theme = this.readEnum('inatTheme', ['light', 'dark', 'transparent-light', 'transparent-dark'], 'light');
       this.photoSize = this.readEnum('inatPhotoSize', ['auto', 'square', 'small', 'medium', 'large'], 'auto');
 
@@ -65,7 +63,6 @@
       this.dateOn = this.readString('inatDate');
 
       this.observations = [];
-      this.viewportMql = this.createViewportMatcher();
 
       ensureStylesheet();
       this.renderShell();
@@ -94,105 +91,94 @@
       return values.includes(value) ? value : fallback;
     }
 
-    createViewportMatcher(){
-      if(typeof window === 'undefined' || typeof window.matchMedia !== 'function'){
-        return null;
-      }
-      return window.matchMedia(`(max-width:${MOBILE_BREAKPOINT}px)`);
-    }
-
     bindViewportHandlers(){
       if(typeof window === 'undefined' || typeof window.addEventListener !== 'function'){
         return;
       }
 
       this.onResize = () => {
-        if(!this.observations.length) return;
-        this.renderGrid();
+        if(!this.gridEl || !this.observations.length) return;
+        this.applyGridMetrics();
       };
 
       window.addEventListener('resize', this.onResize);
-      if(this.viewportMql){
-        this.viewportMql.addEventListener('change', this.onResize);
+    }
+
+    getGridWidth(){
+      return this.gridEl?.clientWidth
+        || this.contentEl?.clientWidth
+        || this.container.clientWidth
+        || (typeof window !== 'undefined' ? window.innerWidth : 0);
+    }
+
+    getLayoutPhotoSize(width){
+      if(this.photoSize !== 'auto'){
+        return this.photoSize;
       }
+
+      if(width <= 420) return 'square';
+      if(width <= 760) return 'small';
+      if(width <= 1200) return 'medium';
+      return 'large';
     }
 
-    isMobileViewport(){
-      if(this.viewportMql) return this.viewportMql.matches;
-      if(typeof window !== 'undefined') return window.innerWidth <= MOBILE_BREAKPOINT;
-      return false;
-    }
+    getGridMetrics(width){
+      const size = this.getLayoutPhotoSize(width);
 
-    isCompactMode(){
-      if(this.mode === 'compact') return true;
-      return this.isMobileViewport();
-    }
+      const baseColsByWidth = (
+        width <= 420 ? 6 :
+        width <= 560 ? 6 :
+        width <= 760 ? 5 :
+        width <= 980 ? 4 :
+        width <= 1320 ? 3 :
+        3
+      );
 
-    getEffectivePhotoSize(){
-      if(this.photoSize === 'auto'){
-        return this.isCompactMode() ? 'small' : 'medium';
-      }
-      return this.photoSize;
-    }
-
-    getGridMetrics(){
-      const compact = this.isCompactMode();
-      const size = this.getEffectivePhotoSize();
-
-      const compactMinTile = {
-        square: 56,
-        small: 64,
-        medium: 76,
-        large: 88,
-        auto: 64
+      const colAdjustmentBySize = {
+        square: 1,
+        small: 0,
+        medium: 0,
+        large: -1,
+        auto: 0
       };
 
-      const compactMinCols = {
-        square: 5,
-        small: 4,
-        medium: 3,
-        large: 2,
-        auto: 4
-      };
+      const minTileByWidth = (
+        width <= 420 ? 44 :
+        width <= 560 ? 52 :
+        width <= 760 ? 60 :
+        width <= 980 ? 74 :
+        width <= 1320 ? 96 :
+        108
+      );
 
-      const extendedMinTile = {
-        square: 96,
-        small: 112,
-        medium: 150,
-        large: 190,
-        auto: 150
-      };
+      const gapByWidth = (
+        width <= 420 ? 3 :
+        width <= 760 ? 4 :
+        width <= 980 ? 5 :
+        6
+      );
 
-      if(compact){
-        return {
-          gap: 4,
-          minTile: compactMinTile[size] || 64,
-          minCols: compactMinCols[size] || 4
-        };
-      }
+      const targetCols = Math.max(2, Math.min(8, baseColsByWidth + (colAdjustmentBySize[size] || 0)));
 
       return {
-        gap: 8,
-        minTile: extendedMinTile[size] || 150,
-        minCols: 1
+        gap: gapByWidth,
+        minTile: minTileByWidth,
+        targetCols
       };
     }
 
     applyGridMetrics(){
       if(!this.gridEl) return;
 
-      const width = this.gridEl.clientWidth || this.contentEl?.clientWidth || this.container.clientWidth || 0;
+      const width = this.getGridWidth();
       if(width <= 0) return;
 
       const itemCount = this.observations.length;
       if(itemCount <= 0) return;
 
-      const metrics = this.getGridMetrics();
-      const naturalCols = Math.floor((width + metrics.gap) / (metrics.minTile + metrics.gap));
-      const cols = Math.max(
-        1,
-        Math.min(itemCount, Math.max(naturalCols, metrics.minCols))
-      );
+      const metrics = this.getGridMetrics(width);
+      const maxColsByMinTile = Math.max(1, Math.floor((width + metrics.gap) / (metrics.minTile + metrics.gap)));
+      const cols = Math.max(1, Math.min(itemCount, Math.min(metrics.targetCols, maxColsByMinTile)));
 
       this.gridEl.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
       this.gridEl.style.gap = `${metrics.gap}px`;
@@ -369,11 +355,13 @@
     }
 
     renderGrid(){
-      const compact = this.isCompactMode();
       const wrap = document.createElement('div');
-      wrap.className = `inat-w-grid ${compact ? 'inat-mode-compact' : 'inat-mode-extended'}`;
+      wrap.className = 'inat-w-grid';
 
-      const photoSize = this.getEffectivePhotoSize();
+      const gridWidth = this.contentEl?.clientWidth
+        || this.container.clientWidth
+        || (typeof window !== 'undefined' ? window.innerWidth : 0);
+      const photoSize = this.getLayoutPhotoSize(gridWidth);
       const photoAssetSize = this.getPhotoAssetSize(photoSize);
 
       this.observations.forEach((obs) => {
@@ -398,25 +386,23 @@
           item.appendChild(fallback);
         }
 
-        if(!compact){
-          const overlay = document.createElement('div');
-          overlay.className = 'inat-w-grid-overlay';
+        const overlay = document.createElement('div');
+        overlay.className = 'inat-w-grid-overlay';
 
-          const name = document.createElement('div');
-          name.className = 'inat-w-grid-name';
-          name.textContent = this.getCommonName(obs);
-          overlay.appendChild(name);
+        const name = document.createElement('div');
+        name.className = 'inat-w-grid-name';
+        name.textContent = this.getCommonName(obs);
+        overlay.appendChild(name);
 
-          const sci = this.getScientificName(obs);
-          if(sci){
-            const sciLine = document.createElement('div');
-            sciLine.className = 'inat-w-grid-sci';
-            sciLine.textContent = sci;
-            overlay.appendChild(sciLine);
-          }
-
-          item.appendChild(overlay);
+        const sci = this.getScientificName(obs);
+        if(sci){
+          const sciLine = document.createElement('div');
+          sciLine.className = 'inat-w-grid-sci';
+          sciLine.textContent = sci;
+          overlay.appendChild(sciLine);
         }
+
+        item.appendChild(overlay);
 
         wrap.appendChild(item);
       });
