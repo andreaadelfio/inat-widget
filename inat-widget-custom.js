@@ -125,12 +125,28 @@
       return this.isMobileViewport() ? 'small' : desktopSize;
     }
 
+    resolveGridSizing(){
+      const sizeMap = {
+        auto: { desktopMin: 145, mobileMin: 76, desktopGap: 8, mobileGap: 4 },
+        square: { desktopMin: 82, mobileMin: 68, desktopGap: 4, mobileGap: 4 },
+        small: { desktopMin: 108, mobileMin: 76, desktopGap: 6, mobileGap: 4 },
+        medium: { desktopMin: 145, mobileMin: 115, desktopGap: 8, mobileGap: 8 },
+        large: { desktopMin: 175, mobileMin: 132, desktopGap: 10, mobileGap: 8 }
+      };
+      return sizeMap[this.photoSize] || sizeMap.auto;
+    }
+
     renderShell(){
       this.container.innerHTML = '';
       this.container.className = `inat-w inat-theme-${this.theme}`;
       this.container.style.setProperty('--inat-radius', `${this.borderRadius}px`);
       this.container.style.setProperty('--inat-radius-sm', `${Math.max(0, this.borderRadius - 3)}px`);
       this.container.style.padding = `${this.padding}px`;
+      const gridSizing = this.resolveGridSizing();
+      this.container.style.setProperty('--inat-grid-min', `${gridSizing.desktopMin}px`);
+      this.container.style.setProperty('--inat-grid-gap', `${gridSizing.desktopGap}px`);
+      this.container.style.setProperty('--inat-grid-min-mobile', `${gridSizing.mobileMin}px`);
+      this.container.style.setProperty('--inat-grid-gap-mobile', `${gridSizing.mobileGap}px`);
 
       const header = document.createElement('div');
       header.className = 'inat-w-header';
