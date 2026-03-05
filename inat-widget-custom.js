@@ -111,11 +111,7 @@
           this.renderCards();
         }
       };
-      if(typeof this.viewportMql.addEventListener === 'function'){
-        this.viewportMql.addEventListener('change', this.onViewportChange);
-      }else if(typeof this.viewportMql.addListener === 'function'){
-        this.viewportMql.addListener(this.onViewportChange);
-      }
+      this.viewportMql.addEventListener('change', this.onViewportChange);
     }
 
     bindResizeListener(){
@@ -124,30 +120,14 @@
       }
       this.onWindowResize = () => {
         if(!this.observations.length) return;
-        if(this.layout !== 'grid') return;
-        if(!this.viewportMql){
-          this.renderGrid();
-          return;
-        }
-        if(this.isCompactLayout()){
-          this.applyCompactGridLayout();
-        }
+        if(this.layout !== 'grid' || !this.isCompactLayout()) return;
+        this.applyCompactGridLayout();
       };
       window.addEventListener('resize', this.onWindowResize);
     }
 
-    isMobileViewport(){
-      return Boolean(this.viewportMql && this.viewportMql.matches);
-    }
-
     isCompactLayout(){
-      if(typeof window === 'undefined'){
-        return false;
-      }
-      if(this.viewportMql){
-        return this.isMobileViewport();
-      }
-      return window.innerWidth <= MOBILE_BREAKPOINT;
+      return Boolean(this.viewportMql && this.viewportMql.matches);
     }
 
     resolvePhotoSize(desktopSize){
@@ -196,7 +176,7 @@
       const width = this.gridEl.clientWidth || this.contentEl?.clientWidth || this.container.clientWidth || 0;
       if(width <= 0) return;
 
-      const minTile = this.isMobileViewport() ? 64 : 75;
+      const minTile = 64;
       const gap = 4;
       const cols = this.resolveCompactGridColumns(width, itemCount, minTile, gap);
       this.gridEl.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
@@ -692,15 +672,6 @@
       const div = document.createElement('div');
       div.textContent = String(value);
       return div.innerHTML;
-    }
-
-    escapeAttr(value){
-      if(!value) return '';
-      return String(value)
-        .replace(/&/g, '&amp;')
-        .replace(/"/g, '&quot;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
     }
   }
 

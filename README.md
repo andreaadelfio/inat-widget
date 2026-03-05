@@ -58,7 +58,7 @@ Il widget legge gli attributi `data-*` in camelCase interno. Esempio: `data-inat
 | `data-inat-padding` | `16` | intero `0..50` | Padding interno contenitore. |
 | `data-inat-photo-size` | `auto` | `auto`, `square`, `small`, `medium`, `large` | Regola soprattutto la `grid` non-compact (desktop/laptop). In mobile compact il widget usa thumbnail quadrate per massimizzare la densita. |
 
-Nota: la `grid` e automatica in base alla viewport (`mobile <=760px` sempre compact, laptop/desktop non compact), quindi non serve impostare `data-inat-compact`.
+Nota: la `grid` e automatica in base alla viewport (`mobile <=760px` sempre compact, laptop/desktop non compact).
 
 ## Come impostare `data-inat-source`
 
