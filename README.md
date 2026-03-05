@@ -63,7 +63,7 @@ Il widget legge gli attributi `data-*` in camelCase interno. Esempio: `data-inat
 | `data-inat-show-notes` | `false` | boolean | Mostra note osservazione (`cards`). |
 | `data-inat-radius` | `12` | intero `0..50` | Border radius contenitore/card. |
 | `data-inat-padding` | `16` | intero `0..50` | Padding interno contenitore. |
-| `data-inat-photo-size` | `auto` | `auto`, `square`, `small`, `medium`, `large` | Regola dimensione foto e fit della grid anche in compact (densita/numero tile). Con `auto`: mobile tende a `small`, desktop a `medium`. |
+| `data-inat-photo-size` | `auto` | `auto`, `square`, `small`, `medium`, `large` | Regola dimensione foto e fit della grid anche in compact (densita/numero tile). In compact e applicata una densita minima di colonne per evitare tile troppo grandi su schermi stretti. |
 
 Nota: la modalita compatta dipende da `data-inat-mode`. In `extended` la `grid` diventa compatta solo su mobile (`<=760px`), in `compact` resta compatta su ogni schermo.
 

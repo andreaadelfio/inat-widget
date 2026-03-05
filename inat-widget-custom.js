@@ -145,11 +145,11 @@
 
     resolveGridSizing(){
       const sizeMap = {
-        auto: { desktopMin: 150, mobileMin: 72, desktopGap: 8, mobileGap: 4, compactMin: 64, compactGap: 4 },
-        square: { desktopMin: 84, mobileMin: 64, desktopGap: 4, mobileGap: 4, compactMin: 56, compactGap: 3 },
-        small: { desktopMin: 102, mobileMin: 72, desktopGap: 6, mobileGap: 4, compactMin: 64, compactGap: 4 },
-        medium: { desktopMin: 150, mobileMin: 118, desktopGap: 8, mobileGap: 8, compactMin: 76, compactGap: 5 },
-        large: { desktopMin: 190, mobileMin: 136, desktopGap: 10, mobileGap: 8, compactMin: 88, compactGap: 6 }
+        auto: { desktopMin: 150, mobileMin: 72, desktopGap: 8, mobileGap: 4, compactMin: 64, compactGap: 4, compactMinCols: 4 },
+        square: { desktopMin: 84, mobileMin: 64, desktopGap: 4, mobileGap: 4, compactMin: 56, compactGap: 3, compactMinCols: 5 },
+        small: { desktopMin: 102, mobileMin: 72, desktopGap: 6, mobileGap: 4, compactMin: 64, compactGap: 4, compactMinCols: 4 },
+        medium: { desktopMin: 150, mobileMin: 118, desktopGap: 8, mobileGap: 8, compactMin: 76, compactGap: 5, compactMinCols: 3 },
+        large: { desktopMin: 190, mobileMin: 136, desktopGap: 10, mobileGap: 8, compactMin: 88, compactGap: 6, compactMinCols: 2 }
       };
       return sizeMap[this.photoSize] || sizeMap.auto;
     }
@@ -166,10 +166,9 @@
       const gridSizing = this.resolveGridSizing();
       const minTile = gridSizing.compactMin;
       const gap = gridSizing.compactGap;
-      const cols = Math.max(
-        1,
-        Math.min(itemCount, Math.floor((width + gap) / (minTile + gap)))
-      );
+      const naturalCols = Math.floor((width + gap) / (minTile + gap));
+      const forcedMinCols = gridSizing.compactMinCols || 1;
+      const cols = Math.max(1, Math.min(itemCount, Math.max(naturalCols, forcedMinCols)));
       this.gridEl.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
     }
 
