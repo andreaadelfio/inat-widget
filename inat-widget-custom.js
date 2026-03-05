@@ -58,7 +58,7 @@
       this.showLocation = this.readBool('inatShowLocation', true);
       this.showGrade = this.readBool('inatShowGrade', false);
       this.showNotes = this.readBool('inatShowNotes', false);
-      this.compact = this.readBool('inatCompact', false);
+      this.compactLegacy = this.readBool('inatCompact', false);
       this.borderRadius = this.readInt('inatRadius', 12, 0, 50);
       this.padding = this.readInt('inatPadding', 16, 0, 50);
       this.photoSize = this.readEnum('inatPhotoSize', ['auto', 'square', 'small', 'medium', 'large'], 'auto');
@@ -68,6 +68,7 @@
       ensureStylesheet();
       this.renderShell();
       this.bindViewportListener();
+      this.bindResizeListener();
       this.fetchObservations();
     }
 
@@ -103,9 +104,13 @@
       if(!this.viewportMql) return;
       this.onViewportChange = () => {
         if(!this.observations.length) return;
-        if(this.photoSize !== 'auto') return;
-        if(this.layout !== 'grid' && this.layout !== 'cards') return;
-        this.renderObservations();
+        if(this.layout === 'grid'){
+          this.renderGrid();
+          return;
+        }
+        if(this.layout === 'cards' && this.photoSize === 'auto'){
+          this.renderCards();
+        }
       };
       if(typeof this.viewportMql.addEventListener === 'function'){
         this.viewportMql.addEventListener('change', this.onViewportChange);
@@ -114,8 +119,27 @@
       }
     }
 
+    bindResizeListener(){
+      if(typeof window === 'undefined' || typeof window.addEventListener !== 'function'){
+        return;
+      }
+      this.onWindowResize = () => {
+        if(!this.observations.length) return;
+        if(this.layout !== 'grid' || !this.isCompactLayout()) return;
+        this.applyCompactGridLayout();
+      };
+      window.addEventListener('resize', this.onWindowResize);
+    }
+
     isMobileViewport(){
       return Boolean(this.viewportMql && this.viewportMql.matches);
+    }
+
+    isCompactLayout(){
+      if(this.viewportMql){
+        return this.isMobileViewport();
+      }
+      return this.compactLegacy;
     }
 
     resolvePhotoSize(desktopSize){
@@ -134,6 +158,40 @@
         large: { desktopMin: 190, mobileMin: 136, desktopGap: 10, mobileGap: 8 }
       };
       return sizeMap[this.photoSize] || sizeMap.auto;
+    }
+
+    resolveCompactGridColumns(width, itemCount, minTile, gap){
+      let maxCols = Math.floor((width + gap) / (minTile + gap));
+      maxCols = Math.max(1, Math.min(maxCols, itemCount));
+      let bestCols = maxCols;
+      let bestScore = Number.POSITIVE_INFINITY;
+
+      for(let cols = 1; cols <= maxCols; cols += 1){
+        const rows = Math.ceil(itemCount / cols);
+        const holes = (rows * cols) - itemCount;
+        const compactPenalty = Math.pow(maxCols - cols, 2);
+        const score = (holes * 10) + compactPenalty;
+        if(score < bestScore){
+          bestScore = score;
+          bestCols = cols;
+        }
+      }
+      return bestCols;
+    }
+
+    applyCompactGridLayout(){
+      if(this.layout !== 'grid' || !this.isCompactLayout()) return;
+      if(!this.gridEl) return;
+      const itemCount = this.observations.length;
+      if(itemCount <= 0) return;
+
+      const width = this.gridEl.clientWidth || this.contentEl?.clientWidth || this.container.clientWidth || 0;
+      if(width <= 0) return;
+
+      const minTile = this.isMobileViewport() ? 64 : 75;
+      const gap = 4;
+      const cols = this.resolveCompactGridColumns(width, itemCount, minTile, gap);
+      this.gridEl.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
     }
 
     renderShell(){
@@ -370,7 +428,8 @@
 
     renderGrid(){
       const wrap = document.createElement('div');
-      wrap.className = `inat-w-grid${this.compact ? ' inat-w-compact' : ''}`;
+      const compactMode = this.isCompactLayout();
+      wrap.className = `inat-w-grid${compactMode ? ' inat-w-compact' : ''}`;
 
       this.observations.forEach((obs) => {
         const item = document.createElement('a');
@@ -381,7 +440,7 @@
 
         const photo = this.getPhotoUrl(
           obs,
-          this.compact ? 'square' : this.resolvePhotoSize('medium')
+          compactMode ? 'square' : this.resolvePhotoSize('medium')
         );
         if(photo){
           const image = document.createElement('img');
@@ -397,7 +456,7 @@
           item.appendChild(fallback);
         }
 
-        if(!this.compact){
+        if(!compactMode){
           const overlay = document.createElement('div');
           overlay.className = 'inat-w-grid-overlay';
 
@@ -422,6 +481,11 @@
 
       this.contentEl.innerHTML = '';
       this.contentEl.appendChild(wrap);
+      this.gridEl = wrap;
+      this.applyCompactGridLayout();
+      if(typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function'){
+        window.requestAnimationFrame(() => this.applyCompactGridLayout());
+      }
     }
 
     renderList(){
