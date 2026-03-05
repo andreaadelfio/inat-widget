@@ -139,11 +139,11 @@
 
     resolveGridSizing(){
       const sizeMap = {
-        auto: { desktopMin: 150, mobileMin: 72, desktopGap: 8, mobileGap: 4 },
-        square: { desktopMin: 84, mobileMin: 64, desktopGap: 4, mobileGap: 4 },
-        small: { desktopMin: 102, mobileMin: 72, desktopGap: 6, mobileGap: 4 },
-        medium: { desktopMin: 150, mobileMin: 118, desktopGap: 8, mobileGap: 8 },
-        large: { desktopMin: 190, mobileMin: 136, desktopGap: 10, mobileGap: 8 }
+        auto: { desktopMin: 150, mobileMin: 72, desktopGap: 8, mobileGap: 4, compactMin: 64, compactGap: 4 },
+        square: { desktopMin: 84, mobileMin: 64, desktopGap: 4, mobileGap: 4, compactMin: 56, compactGap: 3 },
+        small: { desktopMin: 102, mobileMin: 72, desktopGap: 6, mobileGap: 4, compactMin: 64, compactGap: 4 },
+        medium: { desktopMin: 150, mobileMin: 118, desktopGap: 8, mobileGap: 8, compactMin: 76, compactGap: 5 },
+        large: { desktopMin: 190, mobileMin: 136, desktopGap: 10, mobileGap: 8, compactMin: 88, compactGap: 6 }
       };
       return sizeMap[this.photoSize] || sizeMap.auto;
     }
@@ -176,8 +176,9 @@
       const width = this.gridEl.clientWidth || this.contentEl?.clientWidth || this.container.clientWidth || 0;
       if(width <= 0) return;
 
-      const minTile = 64;
-      const gap = 4;
+      const gridSizing = this.resolveGridSizing();
+      const minTile = gridSizing.compactMin;
+      const gap = gridSizing.compactGap;
       const cols = this.resolveCompactGridColumns(width, itemCount, minTile, gap);
       this.gridEl.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
     }
@@ -193,6 +194,8 @@
       this.container.style.setProperty('--inat-grid-gap', `${gridSizing.desktopGap}px`);
       this.container.style.setProperty('--inat-grid-min-mobile', `${gridSizing.mobileMin}px`);
       this.container.style.setProperty('--inat-grid-gap-mobile', `${gridSizing.mobileGap}px`);
+      this.container.style.setProperty('--inat-grid-compact-min-mobile', `${gridSizing.compactMin}px`);
+      this.container.style.setProperty('--inat-grid-compact-gap', `${gridSizing.compactGap}px`);
 
       const header = document.createElement('div');
       header.className = 'inat-w-header';
@@ -426,9 +429,12 @@
         item.target = '_blank';
         item.rel = 'noopener noreferrer';
 
+        const photoSize = compactMode
+          ? this.resolvePhotoSize('small')
+          : this.resolvePhotoSize('medium');
         const photo = this.getPhotoUrl(
           obs,
-          compactMode ? 'square' : this.resolvePhotoSize('medium')
+          photoSize
         );
         if(photo){
           const image = document.createElement('img');

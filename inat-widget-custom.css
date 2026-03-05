@@ -14,6 +14,7 @@
   --inat-grid-min-mobile:115px;
   --inat-grid-gap-mobile:8px;
   --inat-grid-compact-min-mobile:64px;
+  --inat-grid-compact-gap:4px;
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
   line-height:1.45;
   color:var(--inat-text);
@@ -152,7 +153,7 @@
 
 .inat-w-grid.inat-w-compact{
   grid-template-columns:repeat(auto-fit,minmax(var(--inat-grid-compact-min-mobile),1fr));
-  gap:4px;
+  gap:var(--inat-grid-compact-gap);
 }
 
 .inat-w-grid-item{

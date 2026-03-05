@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>iNat Widget Playground</title>
+  <style>
+    :root{
+      color-scheme:light;
+    }
+    *{
+      box-sizing:border-box;
+    }
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      background:#f5f7fb;
+      color:#1f2937;
+    }
+    .page{
+      max-width:1400px;
+      margin:0 auto;
+      padding:20px;
+      display:grid;
+      gap:16px;
+      grid-template-columns:360px 1fr;
+    }
+    .panel{
+      background:#fff;
+      border:1px solid #dbe2ea;
+      border-radius:12px;
+      padding:14px;
+    }
+    .panel h1{
+      margin:0 0 8px;
+      font-size:20px;
+      line-height:1.2;
+    }
+    .panel p{
+      margin:0 0 12px;
+      color:#4b5563;
+      font-size:14px;
+    }
+    .controls{
+      display:grid;
+      gap:10px;
+    }
+    .row{
+      display:grid;
+      gap:6px;
+    }
+    .row-2{
+      display:grid;
+      gap:8px;
+      grid-template-columns:1fr 1fr;
+    }
+    label{
+      font-size:13px;
+      font-weight:600;
+      color:#1f2937;
+    }
+    input,select{
+      width:100%;
+      height:34px;
+      padding:0 10px;
+      border:1px solid #cdd6e0;
+      border-radius:8px;
+      font-size:14px;
+      background:#fff;
+      color:#111827;
+    }
+    .checks{
+      display:grid;
+      gap:8px;
+      grid-template-columns:1fr 1fr;
+      margin-top:4px;
+    }
+    .check{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-size:13px;
+      color:#374151;
+    }
+    .check input{
+      width:auto;
+      height:auto;
+      padding:0;
+      margin:0;
+    }
+    .actions{
+      display:flex;
+      gap:8px;
+      margin-top:6px;
+    }
+    button{
+      height:34px;
+      border:1px solid #cad5e4;
+      border-radius:8px;
+      background:#f8fafc;
+      color:#1f2937;
+      font-size:13px;
+      font-weight:600;
+      padding:0 12px;
+      cursor:pointer;
+    }
+    button.primary{
+      background:#0ea5e9;
+      border-color:#0284c7;
+      color:#fff;
+    }
+    .preview-head{
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      gap:8px;
+      margin-bottom:10px;
+    }
+    .size-buttons{
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+    }
+    .size{
+      font-size:12px;
+      height:30px;
+      padding:0 10px;
+    }
+    .range{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin-left:auto;
+      min-width:280px;
+    }
+    .range input{
+      height:auto;
+      padding:0;
+    }
+    #previewWidth{
+      font-size:12px;
+      color:#4b5563;
+      min-width:58px;
+      text-align:right;
+      font-weight:600;
+    }
+    .frame-wrap{
+      border:1px solid #d8e1ea;
+      border-radius:10px;
+      background:#eef3f8;
+      min-height:600px;
+      padding:10px;
+      overflow:auto;
+    }
+    iframe{
+      width:100%;
+      min-width:280px;
+      height:640px;
+      border:1px dashed #b9c7d8;
+      border-radius:10px;
+      background:#fff;
+      display:block;
+      margin:0 auto;
+    }
+    pre{
+      margin:10px 0 0;
+      padding:10px;
+      border-radius:10px;
+      background:#0b1220;
+      color:#e2e8f0;
+      font-size:12px;
+      line-height:1.45;
+      white-space:pre-wrap;
+      overflow:auto;
+      max-height:220px;
+    }
+    @media(max-width:1100px){
+      .page{
+        grid-template-columns:1fr;
+      }
+      .range{
+        margin-left:0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="panel">
+      <h1>Playground Widget</h1>
+      <p>Configura il widget e testa rapidamente comportamento mobile/laptop.</p>
+      <form id="controls" class="controls">
+        <div class="row">
+          <label for="source">Source</label>
+          <input id="source" name="source" value="andreaadelfio" required>
+        </div>
+        <div class="row-2">
+          <div class="row">
+            <label for="sourceType">Source Type</label>
+            <select id="sourceType" name="sourceType">
+              <option value="user">user</option>
+              <option value="project">project</option>
+              <option value="place">place</option>
+              <option value="taxon">taxon</option>
+              <option value="observation">observation</option>
+            </select>
+          </div>
+          <div class="row">
+            <label for="layout">Layout</label>
+            <select id="layout" name="layout">
+              <option value="grid">grid</option>
+              <option value="list">list</option>
+              <option value="cards">cards</option>
+            </select>
+          </div>
+        </div>
+        <div class="row-2">
+          <div class="row">
+            <label for="limit">Limit</label>
+            <input id="limit" name="limit" type="number" min="1" max="50" value="10">
+          </div>
+          <div class="row">
+            <label for="photoSize">Photo Size</label>
+            <select id="photoSize" name="photoSize">
+              <option value="auto">auto</option>
+              <option value="square">square</option>
+              <option value="small">small</option>
+              <option value="medium" selected>medium</option>
+              <option value="large">large</option>
+            </select>
+          </div>
+        </div>
+        <div class="row-2">
+          <div class="row">
+            <label for="theme">Theme</label>
+            <select id="theme" name="theme">
+              <option value="light">light</option>
+              <option value="dark">dark</option>
+              <option value="transparent-light">transparent-light</option>
+              <option value="transparent-dark">transparent-dark</option>
+            </select>
+          </div>
+          <div class="row">
+            <label for="title">Title</label>
+            <input id="title" name="title" value="View my observations on">
+          </div>
+        </div>
+        <div class="row-2">
+          <div class="row">
+            <label for="orderBy">Order By</label>
+            <input id="orderBy" name="orderBy" value="observed_on">
+          </div>
+          <div class="row">
+            <label for="order">Order</label>
+            <select id="order" name="order">
+              <option value="desc" selected>desc</option>
+              <option value="asc">asc</option>
+            </select>
+          </div>
+        </div>
+        <div class="row-2">
+          <div class="row">
+            <label for="radius">Radius</label>
+            <input id="radius" name="radius" type="number" min="0" max="50" value="14">
+          </div>
+          <div class="row">
+            <label for="padding">Padding</label>
+            <input id="padding" name="padding" type="number" min="0" max="50" value="14">
+          </div>
+        </div>
+        <div class="checks">
+          <label class="check"><input id="showTitle" name="showTitle" type="checkbox" checked>show title</label>
+          <label class="check"><input id="showLocation" name="showLocation" type="checkbox" checked>show location</label>
+          <label class="check"><input id="showGrade" name="showGrade" type="checkbox">show grade</label>
+          <label class="check"><input id="showNotes" name="showNotes" type="checkbox">show notes</label>
+        </div>
+        <div class="actions">
+          <button class="primary" type="submit">Aggiorna Preview</button>
+          <button id="reset" type="button">Reset</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel">
+      <div class="preview-head">
+        <div class="size-buttons">
+          <button class="size" data-width="390" type="button">Mobile 390</button>
+          <button class="size" data-width="768" type="button">Tablet 768</button>
+          <button class="size" data-width="1200" type="button">Laptop 1200</button>
+          <button class="size" data-width="1600" type="button">Wide 1600</button>
+        </div>
+        <div class="range">
+          <label for="widthRange">Larghezza preview</label>
+          <input id="widthRange" type="range" min="300" max="1600" value="1200">
+          <span id="previewWidth">1200px</span>
+        </div>
+      </div>
+      <div class="frame-wrap">
+        <iframe id="preview" title="Widget preview"></iframe>
+      </div>
+      <pre id="snippet"></pre>
+    </section>
+  </div>
+
+  <script>
+    (function(){
+      'use strict';
+
+      const defaults = {
+        source: 'andreaadelfio',
+        sourceType: 'user',
+        layout: 'grid',
+        limit: '10',
+        photoSize: 'medium',
+        theme: 'light',
+        title: 'View my observations on',
+        orderBy: 'observed_on',
+        order: 'desc',
+        radius: '14',
+        padding: '14',
+        showTitle: true,
+        showLocation: true,
+        showGrade: false,
+        showNotes: false
+      };
+
+      const form = document.getElementById('controls');
+      const frame = document.getElementById('preview');
+      const snippet = document.getElementById('snippet');
+      const widthRange = document.getElementById('widthRange');
+      const previewWidth = document.getElementById('previewWidth');
+      const resetButton = document.getElementById('reset');
+      const widthButtons = Array.from(document.querySelectorAll('button[data-width]'));
+
+      function setFormValues(values){
+        form.source.value = values.source;
+        form.sourceType.value = values.sourceType;
+        form.layout.value = values.layout;
+        form.limit.value = values.limit;
+        form.photoSize.value = values.photoSize;
+        form.theme.value = values.theme;
+        form.title.value = values.title;
+        form.orderBy.value = values.orderBy;
+        form.order.value = values.order;
+        form.radius.value = values.radius;
+        form.padding.value = values.padding;
+        form.showTitle.checked = values.showTitle;
+        form.showLocation.checked = values.showLocation;
+        form.showGrade.checked = values.showGrade;
+        form.showNotes.checked = values.showNotes;
+      }
+
+      function readOptions(){
+        return {
+          source: form.source.value.trim(),
+          sourceType: form.sourceType.value.trim(),
+          layout: form.layout.value.trim(),
+          limit: form.limit.value.trim(),
+          photoSize: form.photoSize.value.trim(),
+          theme: form.theme.value.trim(),
+          title: form.title.value.trim(),
+          orderBy: form.orderBy.value.trim(),
+          order: form.order.value.trim(),
+          radius: form.radius.value.trim(),
+          padding: form.padding.value.trim(),
+          showTitle: form.showTitle.checked,
+          showLocation: form.showLocation.checked,
+          showGrade: form.showGrade.checked,
+          showNotes: form.showNotes.checked
+        };
+      }
+
+      function escapeHtml(value){
+        return String(value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      function attrsForSnippet(opts){
+        const esc = (value) => escapeHtml(String(value));
+        return [
+          'data-inat-widget',
+          `data-inat-source="${esc(opts.source)}"`,
+          `data-inat-source-type="${esc(opts.sourceType)}"`,
+          `data-inat-layout="${esc(opts.layout)}"`,
+          `data-inat-limit="${esc(opts.limit)}"`,
+          `data-inat-order-by="${esc(opts.orderBy)}"`,
+          `data-inat-order="${esc(opts.order)}"`,
+          `data-inat-theme="${esc(opts.theme)}"`,
+          `data-inat-title="${esc(opts.title)}"`,
+          `data-inat-show-title="${opts.showTitle}"`,
+          `data-inat-show-location="${opts.showLocation}"`,
+          `data-inat-show-grade="${opts.showGrade}"`,
+          `data-inat-show-notes="${opts.showNotes}"`,
+          `data-inat-photo-size="${esc(opts.photoSize)}"`,
+          `data-inat-radius="${esc(opts.radius)}"`,
+          `data-inat-padding="${esc(opts.padding)}"`
+        ];
+      }
+
+      function buildWidgetDiv(opts){
+        return `<div\n  ${attrsForSnippet(opts).join('\n  ')}\n></div>`;
+      }
+
+      function buildSrcdoc(opts){
+        const baseHref = escapeHtml(window.location.href);
+        const widgetDiv = buildWidgetDiv(opts);
+        return [
+          '<!doctype html>',
+          '<html lang="it"><head>',
+          '<meta charset="utf-8">',
+          '<meta name="viewport" content="width=device-width, initial-scale=1">',
+          `<base href="${baseHref}">`,
+          '<link rel="stylesheet" href="./inat-widget-custom.css">',
+          '<style>',
+          'html,body{margin:0;padding:0;background:#e9eef5;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;}',
+          'main{padding:16px;}',
+          '</style>',
+          '</head><body><main>',
+          widgetDiv,
+          '</main>',
+          '<script src="./inat-widget-custom.js"><\/script>',
+          '</body></html>'
+        ].join('');
+      }
+
+      function setPreviewWidth(width){
+        const px = Math.max(300, Math.min(1600, Number(width) || 1200));
+        frame.style.width = `${px}px`;
+        previewWidth.textContent = `${px}px`;
+        widthRange.value = String(px);
+      }
+
+      function render(){
+        const opts = readOptions();
+        frame.srcdoc = buildSrcdoc(opts);
+        snippet.textContent = buildWidgetDiv(opts);
+      }
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        render();
+      });
+
+      resetButton.addEventListener('click', () => {
+        setFormValues(defaults);
+        render();
+      });
+
+      widthRange.addEventListener('input', () => {
+        setPreviewWidth(widthRange.value);
+      });
+
+      widthButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          setPreviewWidth(button.dataset.width);
+        });
+      });
+
+      setFormValues(defaults);
+      setPreviewWidth(1200);
+      render();
+    })();
+  </script>
+</body>
+</html>
