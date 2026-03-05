@@ -7,6 +7,7 @@
 
   const INAT_API = 'https://api.inaturalist.org/v1';
   const STYLESHEET_ID = 'inat-widget-custom-stylesheet';
+  const MOBILE_BREAKPOINT = 760;
 
   function resolveStylesheetHref(){
     const script = document.currentScript
@@ -60,11 +61,13 @@
       this.compact = this.readBool('inatCompact', false);
       this.borderRadius = this.readInt('inatRadius', 12, 0, 50);
       this.padding = this.readInt('inatPadding', 16, 0, 50);
-      this.photoSize = this.readEnum('inatPhotoSize', ['square', 'small', 'medium', 'large'], 'medium');
+      this.photoSize = this.readEnum('inatPhotoSize', ['auto', 'square', 'small', 'medium', 'large'], 'auto');
       this.observations = [];
+      this.viewportMql = this.createViewportMatcher();
 
       ensureStylesheet();
       this.renderShell();
+      this.bindViewportListener();
       this.fetchObservations();
     }
 
@@ -87,6 +90,39 @@
     readEnum(name, values, fallback){
       const value = this.readString(name).toLowerCase();
       return values.includes(value) ? value : fallback;
+    }
+
+    createViewportMatcher(){
+      if(typeof window === 'undefined' || typeof window.matchMedia !== 'function'){
+        return null;
+      }
+      return window.matchMedia(`(max-width:${MOBILE_BREAKPOINT}px)`);
+    }
+
+    bindViewportListener(){
+      if(!this.viewportMql) return;
+      this.onViewportChange = () => {
+        if(this.photoSize !== 'auto') return;
+        if(!this.observations.length) return;
+        if(this.layout !== 'grid' && this.layout !== 'cards') return;
+        this.renderObservations();
+      };
+      if(typeof this.viewportMql.addEventListener === 'function'){
+        this.viewportMql.addEventListener('change', this.onViewportChange);
+      }else if(typeof this.viewportMql.addListener === 'function'){
+        this.viewportMql.addListener(this.onViewportChange);
+      }
+    }
+
+    isMobileViewport(){
+      return Boolean(this.viewportMql && this.viewportMql.matches);
+    }
+
+    resolvePhotoSize(desktopSize){
+      if(this.photoSize && this.photoSize !== 'auto'){
+        return this.photoSize;
+      }
+      return this.isMobileViewport() ? 'small' : desktopSize;
     }
 
     renderShell(){
@@ -327,7 +363,10 @@
         item.target = '_blank';
         item.rel = 'noopener noreferrer';
 
-        const photo = this.getPhotoUrl(obs, this.compact ? 'square' : this.photoSize);
+        const photo = this.getPhotoUrl(
+          obs,
+          this.compact ? 'square' : this.resolvePhotoSize('medium')
+        );
         if(photo){
           const image = document.createElement('img');
           image.className = 'inat-w-grid-img';
@@ -445,7 +484,7 @@
 
         const cover = document.createElement('div');
         cover.className = 'inat-w-card-cover';
-        const photo = this.getPhotoUrl(obs, 'medium');
+        const photo = this.getPhotoUrl(obs, this.resolvePhotoSize('medium'));
         if(photo){
           const image = document.createElement('img');
           image.className = 'inat-w-card-cover-img';

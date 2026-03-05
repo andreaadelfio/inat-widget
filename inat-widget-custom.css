@@ -140,12 +140,12 @@
 
 .inat-w-grid{
   display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(145px,1fr));
+  grid-template-columns:repeat(auto-fit,minmax(145px,1fr));
   gap:8px;
 }
 
 .inat-w-grid.inat-w-compact{
-  grid-template-columns:repeat(auto-fill,75px);
+  grid-template-columns:repeat(auto-fit,minmax(75px,75px));
   gap:4px;
   justify-content:start;
 }
@@ -405,7 +405,7 @@
     height:16px;
   }
   .inat-w-grid{
-    grid-template-columns:repeat(auto-fill,minmax(115px,1fr));
+    grid-template-columns:repeat(auto-fit,minmax(115px,1fr));
   }
   .inat-w-cards{
     grid-template-columns:1fr;
