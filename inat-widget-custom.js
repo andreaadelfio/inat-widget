@@ -1,6 +1,8 @@
 /**
- * iNaturalist Observations Widget (customized)
- * Inspired by: https://glauberramos.github.io/inat/widget
+ * iNaturalist Widget (simple rebuild)
+ * Modes:
+ * - compact: always compact (mobile and desktop)
+ * - extended: desktop extended, mobile collapses to compact
  */
 (function(){
   'use strict';
@@ -32,43 +34,42 @@
 
   function initWidgets(){
     const containers = Array.from(document.querySelectorAll('[data-inat-widget]'));
-    containers.forEach((el) => {
-      new InatWidget(el);
-    });
+    containers.forEach((el) => new InatWidget(el));
   }
 
   class InatWidget {
     constructor(container){
       this.container = container;
+
       this.source = this.readString('inatSource');
       this.sourceType = this.readEnum('inatSourceType', ['user', 'project', 'place', 'taxon', 'observation'], 'user');
+      this.mode = this.readEnum('inatMode', ['compact', 'extended'], 'extended');
+      this.theme = this.readEnum('inatTheme', ['light', 'dark', 'transparent-light', 'transparent-dark'], 'light');
+      this.photoSize = this.readEnum('inatPhotoSize', ['auto', 'square', 'small', 'medium', 'large'], 'auto');
+
       this.limit = this.readInt('inatLimit', 10, 1, 50);
       this.orderBy = this.readString('inatOrderBy') || 'observed_on';
       this.order = this.readEnum('inatOrder', ['asc', 'desc'], 'desc');
-      this.layout = this.readEnum('inatLayout', ['grid', 'list', 'cards'], 'grid');
-      this.mode = this.readEnum('inatMode', ['compact', 'extended'], 'extended');
-      this.theme = this.readEnum('inatTheme', ['light', 'dark', 'transparent-light', 'transparent-dark'], 'light');
+
       this.title = this.readString('inatTitle') || 'View my observations on';
       this.userIcon = this.readString('inatUserIcon');
+      this.showTitle = this.readBool('inatShowTitle', true);
+
+      this.padding = this.readInt('inatPadding', 14, 0, 50);
+      this.borderRadius = this.readInt('inatRadius', 14, 0, 50);
+
       this.taxon = this.readString('inatTaxon');
       this.qualityGrade = this.readString('inatQuality') || this.readString('inatQualityGrade');
       this.dateFrom = this.readString('inatDateFrom');
       this.dateTo = this.readString('inatDateTo');
       this.dateOn = this.readString('inatDate');
-      this.showTitle = this.readBool('inatShowTitle', true);
-      this.showLocation = this.readBool('inatShowLocation', true);
-      this.showGrade = this.readBool('inatShowGrade', false);
-      this.showNotes = this.readBool('inatShowNotes', false);
-      this.borderRadius = this.readInt('inatRadius', 12, 0, 50);
-      this.padding = this.readInt('inatPadding', 16, 0, 50);
-      this.photoSize = this.readEnum('inatPhotoSize', ['auto', 'square', 'small', 'medium', 'large'], 'auto');
+
       this.observations = [];
       this.viewportMql = this.createViewportMatcher();
 
       ensureStylesheet();
       this.renderShell();
-      this.bindViewportListener();
-      this.bindResizeListener();
+      this.bindViewportHandlers();
       this.fetchObservations();
     }
 
@@ -100,76 +101,101 @@
       return window.matchMedia(`(max-width:${MOBILE_BREAKPOINT}px)`);
     }
 
-    bindViewportListener(){
-      if(!this.viewportMql) return;
-      this.onViewportChange = () => {
-        if(!this.observations.length) return;
-        if(this.layout === 'grid'){
-          if(this.mode === 'extended'){
-            this.renderGrid();
-          }else{
-            this.applyCompactGridLayout();
-          }
-          return;
-        }
-        if(this.layout === 'cards' && this.photoSize === 'auto'){
-          this.renderCards();
-        }
-      };
-      this.viewportMql.addEventListener('change', this.onViewportChange);
-    }
-
-    bindResizeListener(){
+    bindViewportHandlers(){
       if(typeof window === 'undefined' || typeof window.addEventListener !== 'function'){
         return;
       }
-      this.onWindowResize = () => {
+
+      this.onResize = () => {
         if(!this.observations.length) return;
-        if(this.layout !== 'grid' || !this.isCompactLayout()) return;
-        this.applyCompactGridLayout();
+        this.renderGrid();
       };
-      window.addEventListener('resize', this.onWindowResize);
-    }
 
-    isCompactLayout(){
-      if(this.mode === 'compact') return true;
-      return Boolean(this.viewportMql && this.viewportMql.matches);
-    }
-
-    resolvePhotoSize(desktopSize){
-      if(this.photoSize && this.photoSize !== 'auto'){
-        return this.photoSize;
+      window.addEventListener('resize', this.onResize);
+      if(this.viewportMql){
+        this.viewportMql.addEventListener('change', this.onResize);
       }
-      return this.isCompactLayout() ? 'small' : desktopSize;
     }
 
-    resolveGridSizing(){
-      const sizeMap = {
-        auto: { desktopMin: 150, mobileMin: 72, desktopGap: 8, mobileGap: 4, compactMin: 64, compactGap: 4, compactMinCols: 4 },
-        square: { desktopMin: 84, mobileMin: 64, desktopGap: 4, mobileGap: 4, compactMin: 56, compactGap: 3, compactMinCols: 5 },
-        small: { desktopMin: 102, mobileMin: 72, desktopGap: 6, mobileGap: 4, compactMin: 64, compactGap: 4, compactMinCols: 4 },
-        medium: { desktopMin: 150, mobileMin: 118, desktopGap: 8, mobileGap: 8, compactMin: 76, compactGap: 5, compactMinCols: 3 },
-        large: { desktopMin: 190, mobileMin: 136, desktopGap: 10, mobileGap: 8, compactMin: 88, compactGap: 6, compactMinCols: 2 }
+    isMobileViewport(){
+      if(this.viewportMql) return this.viewportMql.matches;
+      if(typeof window !== 'undefined') return window.innerWidth <= MOBILE_BREAKPOINT;
+      return false;
+    }
+
+    isCompactMode(){
+      if(this.mode === 'compact') return true;
+      return this.isMobileViewport();
+    }
+
+    getEffectivePhotoSize(){
+      if(this.photoSize === 'auto'){
+        return this.isCompactMode() ? 'small' : 'medium';
+      }
+      return this.photoSize;
+    }
+
+    getGridMetrics(){
+      const compact = this.isCompactMode();
+      const size = this.getEffectivePhotoSize();
+
+      const compactMinTile = {
+        square: 56,
+        small: 64,
+        medium: 76,
+        large: 88,
+        auto: 64
       };
-      return sizeMap[this.photoSize] || sizeMap.auto;
+
+      const compactMinCols = {
+        square: 5,
+        small: 4,
+        medium: 3,
+        large: 2,
+        auto: 4
+      };
+
+      const extendedMinTile = {
+        square: 96,
+        small: 112,
+        medium: 150,
+        large: 190,
+        auto: 150
+      };
+
+      if(compact){
+        return {
+          gap: 4,
+          minTile: compactMinTile[size] || 64,
+          minCols: compactMinCols[size] || 4
+        };
+      }
+
+      return {
+        gap: 8,
+        minTile: extendedMinTile[size] || 150,
+        minCols: 1
+      };
     }
 
-    applyCompactGridLayout(){
-      if(this.layout !== 'grid' || !this.isCompactLayout()) return;
+    applyGridMetrics(){
       if(!this.gridEl) return;
-      const itemCount = this.observations.length;
-      if(itemCount <= 0) return;
 
       const width = this.gridEl.clientWidth || this.contentEl?.clientWidth || this.container.clientWidth || 0;
       if(width <= 0) return;
 
-      const gridSizing = this.resolveGridSizing();
-      const minTile = gridSizing.compactMin;
-      const gap = gridSizing.compactGap;
-      const naturalCols = Math.floor((width + gap) / (minTile + gap));
-      const forcedMinCols = gridSizing.compactMinCols || 1;
-      const cols = Math.max(1, Math.min(itemCount, Math.max(naturalCols, forcedMinCols)));
+      const itemCount = this.observations.length;
+      if(itemCount <= 0) return;
+
+      const metrics = this.getGridMetrics();
+      const naturalCols = Math.floor((width + metrics.gap) / (metrics.minTile + metrics.gap));
+      const cols = Math.max(
+        1,
+        Math.min(itemCount, Math.max(naturalCols, metrics.minCols))
+      );
+
       this.gridEl.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+      this.gridEl.style.gap = `${metrics.gap}px`;
     }
 
     renderShell(){
@@ -178,13 +204,6 @@
       this.container.style.setProperty('--inat-radius', `${this.borderRadius}px`);
       this.container.style.setProperty('--inat-radius-sm', `${Math.max(0, this.borderRadius - 3)}px`);
       this.container.style.padding = `${this.padding}px`;
-      const gridSizing = this.resolveGridSizing();
-      this.container.style.setProperty('--inat-grid-min', `${gridSizing.desktopMin}px`);
-      this.container.style.setProperty('--inat-grid-gap', `${gridSizing.desktopGap}px`);
-      this.container.style.setProperty('--inat-grid-min-mobile', `${gridSizing.mobileMin}px`);
-      this.container.style.setProperty('--inat-grid-gap-mobile', `${gridSizing.mobileGap}px`);
-      this.container.style.setProperty('--inat-grid-compact-min-mobile', `${gridSizing.compactMin}px`);
-      this.container.style.setProperty('--inat-grid-compact-gap', `${gridSizing.compactGap}px`);
 
       const header = document.createElement('div');
       header.className = 'inat-w-header';
@@ -215,11 +234,8 @@
         titleLink.href = sourceUrl;
         titleLink.target = '_blank';
         titleLink.rel = 'noopener noreferrer';
-        titleLink.textContent = this.title || 'View my observations on';
+        titleLink.textContent = this.title;
         headerRight.appendChild(titleLink);
-        this.headerSourceLinks = [userLink, titleLink];
-      }else{
-        this.headerSourceLinks = [userLink];
       }
 
       const logoLink = document.createElement('a');
@@ -235,11 +251,8 @@
       logo.alt = 'iNaturalist';
       logoLink.appendChild(logo);
       headerRight.appendChild(logoLink);
+
       header.appendChild(headerRight);
-
-      this.headerUserIconEl = userImg;
-      this.headerUserLinkEl = userLink;
-
       this.container.appendChild(header);
 
       this.contentEl = document.createElement('div');
@@ -285,45 +298,13 @@
     }
 
     getHeaderUserIcon(){
-      if(this.userIcon){
-        return this.userIcon;
-      }
-      if(this.sourceType === 'user' && this.source.toLowerCase() === 'andreaadelfio'){
-        return 'https://static.inaturalist.org/attachments/users/icons/3032137/thumb.jpeg';
-      }
+      if(this.userIcon) return this.userIcon;
       return this.getFallbackUserIcon();
     }
 
     getFallbackUserIcon(){
       const svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='10' fill='%23dbe3ea'/><text x='32' y='38' text-anchor='middle' font-family='Arial,sans-serif' font-size='20' fill='%235b6775'>iN</text></svg>";
       return `data:image/svg+xml;utf8,${svg}`;
-    }
-
-    syncHeaderFromObservation(){
-      const first = this.observations[0];
-      if(!first) return;
-
-      const login = String(first?.user?.login || '').trim();
-      const displayName = String(first?.user?.name || login || this.getHeaderUserLabel()).trim();
-      const icon = String(first?.user?.icon || '').trim();
-
-      if(login && Array.isArray(this.headerSourceLinks)){
-        const url = `https://www.inaturalist.org/observations/${encodeURIComponent(login)}`;
-        this.headerSourceLinks.forEach((link) => {
-          link.href = url;
-        });
-      }
-
-      if(this.headerUserLinkEl){
-        this.headerUserLinkEl.setAttribute('aria-label', `Observations by ${displayName}`);
-      }
-
-      if(this.headerUserIconEl){
-        this.headerUserIconEl.alt = displayName;
-        if(icon){
-          this.headerUserIconEl.src = icon;
-        }
-      }
     }
 
     normalizeObservationSource(value){
@@ -345,45 +326,38 @@
           if(!response.ok) throw new Error(`HTTP ${response.status}`);
           const data = await response.json();
           this.observations = Array.isArray(data?.results) ? data.results : [];
-          if(!this.observations.length){
-            this.renderError('Observation not found.');
-            return;
-          }
-          this.syncHeaderFromObservation();
-          this.renderObservations();
-          return;
-        }
-
-        const params = new URLSearchParams();
-        params.set('per_page', String(this.limit));
-        params.set('order', this.order);
-        params.set('order_by', this.orderBy);
-        params.set(this.getSourceParamName(), this.source);
-
-        if(this.taxon && this.sourceType !== 'taxon'){
-          params.set('taxon_id', this.taxon);
-        }
-        if(this.qualityGrade && this.qualityGrade !== 'any'){
-          params.set('quality_grade', this.qualityGrade);
-        }
-        if(this.dateOn){
-          params.set('on', this.dateOn);
         }else{
-          if(this.dateFrom) params.set('d1', this.dateFrom);
-          if(this.dateTo) params.set('d2', this.dateTo);
+          const params = new URLSearchParams();
+          params.set('per_page', String(this.limit));
+          params.set('order', this.order);
+          params.set('order_by', this.orderBy);
+          params.set(this.getSourceParamName(), this.source);
+
+          if(this.taxon && this.sourceType !== 'taxon'){
+            params.set('taxon_id', this.taxon);
+          }
+          if(this.qualityGrade && this.qualityGrade !== 'any'){
+            params.set('quality_grade', this.qualityGrade);
+          }
+          if(this.dateOn){
+            params.set('on', this.dateOn);
+          }else{
+            if(this.dateFrom) params.set('d1', this.dateFrom);
+            if(this.dateTo) params.set('d2', this.dateTo);
+          }
+
+          const response = await fetch(`${INAT_API}/observations?${params.toString()}`);
+          if(!response.ok) throw new Error(`HTTP ${response.status}`);
+          const data = await response.json();
+          this.observations = Array.isArray(data?.results) ? data.results : [];
         }
 
-        const response = await fetch(`${INAT_API}/observations?${params.toString()}`);
-        if(!response.ok) throw new Error(`HTTP ${response.status}`);
-        const data = await response.json();
-        this.observations = Array.isArray(data?.results) ? data.results : [];
         if(!this.observations.length){
           this.renderError('No observations found for this source.');
           return;
         }
 
-        this.syncHeaderFromObservation();
-        this.renderObservations();
+        this.renderGrid();
       }catch(error){
         console.error('iNaturalist widget load error:', error);
         this.renderError('Could not load observations right now.');
@@ -394,22 +368,12 @@
       this.contentEl.innerHTML = `<div class="inat-w-error">${this.escapeHtml(message)}</div>`;
     }
 
-    renderObservations(){
-      if(this.layout === 'list'){
-        this.renderList();
-        return;
-      }
-      if(this.layout === 'cards'){
-        this.renderCards();
-        return;
-      }
-      this.renderGrid();
-    }
-
     renderGrid(){
+      const compact = this.isCompactMode();
       const wrap = document.createElement('div');
-      const compactMode = this.isCompactLayout();
-      wrap.className = `inat-w-grid${compactMode ? ' inat-w-compact' : ''}`;
+      wrap.className = `inat-w-grid ${compact ? 'inat-mode-compact' : 'inat-mode-extended'}`;
+
+      const photoSize = this.getEffectivePhotoSize();
 
       this.observations.forEach((obs) => {
         const item = document.createElement('a');
@@ -418,13 +382,7 @@
         item.target = '_blank';
         item.rel = 'noopener noreferrer';
 
-        const photoSize = compactMode
-          ? this.resolvePhotoSize('small')
-          : this.resolvePhotoSize('medium');
-        const photo = this.getPhotoUrl(
-          obs,
-          photoSize
-        );
+        const photo = this.getPhotoUrl(obs, photoSize);
         if(photo){
           const image = document.createElement('img');
           image.className = 'inat-w-grid-img';
@@ -439,7 +397,7 @@
           item.appendChild(fallback);
         }
 
-        if(!compactMode){
+        if(!compact){
           const overlay = document.createElement('div');
           overlay.className = 'inat-w-grid-overlay';
 
@@ -465,161 +423,10 @@
       this.contentEl.innerHTML = '';
       this.contentEl.appendChild(wrap);
       this.gridEl = wrap;
-      this.applyCompactGridLayout();
+      this.applyGridMetrics();
       if(typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function'){
-        window.requestAnimationFrame(() => this.applyCompactGridLayout());
+        window.requestAnimationFrame(() => this.applyGridMetrics());
       }
-    }
-
-    renderList(){
-      const wrap = document.createElement('div');
-      wrap.className = 'inat-w-list';
-
-      this.observations.forEach((obs) => {
-        const item = document.createElement('a');
-        item.className = 'inat-w-list-item';
-        item.href = this.getObservationUrl(obs);
-        item.target = '_blank';
-        item.rel = 'noopener noreferrer';
-
-        const photo = this.getPhotoUrl(obs, 'square');
-        if(photo){
-          const image = document.createElement('img');
-          image.className = 'inat-w-list-img';
-          image.src = photo;
-          image.alt = this.getCommonName(obs);
-          image.loading = 'lazy';
-          item.appendChild(image);
-        }else{
-          const fallback = document.createElement('div');
-          fallback.className = 'inat-w-list-img inat-w-no-photo';
-          fallback.textContent = this.noPhotoLabel(obs);
-          item.appendChild(fallback);
-        }
-
-        const info = document.createElement('div');
-        info.className = 'inat-w-list-info';
-
-        const name = document.createElement('div');
-        name.className = 'inat-w-list-name';
-        name.textContent = this.getCommonName(obs);
-        info.appendChild(name);
-
-        const sci = this.getScientificName(obs);
-        if(sci){
-          const sciLine = document.createElement('div');
-          sciLine.className = 'inat-w-list-scientific';
-          sciLine.textContent = sci;
-          info.appendChild(sciLine);
-        }
-
-        const meta = document.createElement('div');
-        meta.className = 'inat-w-list-meta';
-        meta.textContent = `${obs?.user?.login || ''} · ${this.formatDate(obs)}`;
-        info.appendChild(meta);
-
-        item.appendChild(info);
-
-        if(this.showGrade && obs.quality_grade && obs.quality_grade !== 'casual'){
-          const grade = document.createElement('span');
-          grade.className = `inat-w-grade inat-w-grade-${obs.quality_grade}`;
-          grade.textContent = obs.quality_grade === 'research' ? 'RG' : 'Needs ID';
-          item.appendChild(grade);
-        }
-
-        wrap.appendChild(item);
-      });
-
-      this.contentEl.innerHTML = '';
-      this.contentEl.appendChild(wrap);
-    }
-
-    renderCards(){
-      const wrap = document.createElement('div');
-      wrap.className = 'inat-w-cards';
-
-      this.observations.forEach((obs) => {
-        const card = document.createElement('a');
-        card.className = 'inat-w-card';
-        card.href = this.getObservationUrl(obs);
-        card.target = '_blank';
-        card.rel = 'noopener noreferrer';
-
-        const cover = document.createElement('div');
-        cover.className = 'inat-w-card-cover';
-        const photo = this.getPhotoUrl(obs, this.resolvePhotoSize('medium'));
-        if(photo){
-          const image = document.createElement('img');
-          image.className = 'inat-w-card-cover-img';
-          image.src = photo;
-          image.alt = this.getCommonName(obs);
-          image.loading = 'lazy';
-          cover.appendChild(image);
-        }else{
-          const fallback = document.createElement('div');
-          fallback.className = 'inat-w-no-photo';
-          fallback.textContent = this.noPhotoLabel(obs);
-          cover.appendChild(fallback);
-        }
-        card.appendChild(cover);
-
-        const body = document.createElement('div');
-        body.className = 'inat-w-card-body';
-
-        const common = document.createElement('div');
-        common.className = 'inat-w-card-common';
-        common.textContent = this.getCommonName(obs);
-        body.appendChild(common);
-
-        const sci = this.getScientificName(obs);
-        if(sci){
-          const sciLine = document.createElement('div');
-          sciLine.className = 'inat-w-card-scientific';
-          sciLine.textContent = sci;
-          body.appendChild(sciLine);
-        }
-
-        const details = document.createElement('div');
-        details.className = 'inat-w-card-details';
-        details.appendChild(this.buildDetailRow('Observer:', obs?.user?.login || 'Unknown'));
-        details.appendChild(this.buildDetailRow('Date:', this.formatDate(obs)));
-
-        if(this.showLocation){
-          details.appendChild(this.buildDetailRow('Location:', obs.place_guess || 'Unknown'));
-        }
-
-        if(this.showGrade && obs.quality_grade && obs.quality_grade !== 'casual'){
-          details.appendChild(this.buildDetailRow('Grade:', obs.quality_grade === 'research' ? 'Research Grade' : 'Needs ID'));
-        }
-
-        if(this.showNotes && obs.description){
-          details.appendChild(this.buildDetailRow('Notes:', obs.description));
-        }
-
-        body.appendChild(details);
-        card.appendChild(body);
-        wrap.appendChild(card);
-      });
-
-      this.contentEl.innerHTML = '';
-      this.contentEl.appendChild(wrap);
-    }
-
-    buildDetailRow(label, value){
-      const row = document.createElement('div');
-      row.className = 'inat-w-card-detail';
-
-      const labelEl = document.createElement('span');
-      labelEl.className = 'inat-w-card-detail-label';
-      labelEl.textContent = label;
-
-      const valueEl = document.createElement('span');
-      valueEl.className = 'inat-w-card-detail-value';
-      valueEl.textContent = String(value || '');
-
-      row.appendChild(labelEl);
-      row.appendChild(valueEl);
-      return row;
     }
 
     getObservationUrl(obs){
@@ -648,18 +455,6 @@
     noPhotoLabel(obs){
       const hasAudio = Array.isArray(obs?.sounds) && obs.sounds.length > 0;
       return hasAudio ? 'Audio' : 'Photo';
-    }
-
-    formatDate(obs){
-      const dateStr = obs?.observed_on || obs?.created_at || '';
-      if(!dateStr) return 'Unknown date';
-      const date = new Date(dateStr);
-      if(Number.isNaN(date.getTime())) return dateStr;
-      return date.toLocaleDateString('en-GB', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric'
-      });
     }
 
     escapeHtml(value){

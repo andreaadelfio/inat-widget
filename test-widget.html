@@ -5,97 +5,67 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>iNat Widget Playground</title>
   <style>
-    :root{
-      color-scheme:light;
-    }
-    *{
-      box-sizing:border-box;
-    }
+    *{ box-sizing:border-box; }
     body{
       margin:0;
       font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-      background:#f5f7fb;
+      background:#f3f6fb;
       color:#1f2937;
     }
     .page{
-      max-width:1400px;
+      max-width:1320px;
       margin:0 auto;
-      padding:20px;
+      padding:18px;
       display:grid;
-      gap:16px;
-      grid-template-columns:360px 1fr;
+      gap:14px;
+      grid-template-columns:340px 1fr;
     }
     .panel{
       background:#fff;
-      border:1px solid #dbe2ea;
+      border:1px solid #dbe3ea;
       border-radius:12px;
       padding:14px;
     }
-    .panel h1{
+    h1{
       margin:0 0 8px;
       font-size:20px;
       line-height:1.2;
     }
-    .panel p{
+    p{
       margin:0 0 12px;
-      color:#4b5563;
       font-size:14px;
+      color:#526075;
     }
-    .controls{
-      display:grid;
-      gap:10px;
-    }
-    .row{
-      display:grid;
-      gap:6px;
-    }
-    .row-2{
-      display:grid;
-      gap:8px;
-      grid-template-columns:1fr 1fr;
-    }
-    label{
-      font-size:13px;
-      font-weight:600;
-      color:#1f2937;
-    }
+    .controls{ display:grid; gap:10px; }
+    .row{ display:grid; gap:6px; }
+    .row-2{ display:grid; gap:8px; grid-template-columns:1fr 1fr; }
+    label{ font-size:13px; font-weight:600; }
     input,select{
       width:100%;
       height:34px;
-      padding:0 10px;
-      border:1px solid #cdd6e0;
+      border:1px solid #c9d3df;
       border-radius:8px;
+      padding:0 10px;
       font-size:14px;
       background:#fff;
       color:#111827;
-    }
-    .checks{
-      display:grid;
-      gap:8px;
-      grid-template-columns:1fr 1fr;
-      margin-top:4px;
     }
     .check{
       display:flex;
       align-items:center;
       gap:8px;
       font-size:13px;
-      color:#374151;
     }
     .check input{
       width:auto;
       height:auto;
-      padding:0;
       margin:0;
+      padding:0;
     }
-    .actions{
-      display:flex;
-      gap:8px;
-      margin-top:6px;
-    }
+    .actions{ display:flex; gap:8px; }
     button{
       height:34px;
-      border:1px solid #cad5e4;
+      border:1px solid #c8d3e0;
       border-radius:8px;
       background:#f8fafc;
       color:#1f2937;
@@ -105,8 +75,8 @@
       cursor:pointer;
     }
     button.primary{
-      background:#0ea5e9;
-      border-color:#0284c7;
+      background:#0284c7;
+      border-color:#0369a1;
       color:#fff;
     }
     .preview-head{
@@ -116,50 +86,33 @@
       gap:8px;
       margin-bottom:10px;
     }
-    .size-buttons{
-      display:flex;
-      flex-wrap:wrap;
-      gap:6px;
-    }
-    .size{
-      font-size:12px;
-      height:30px;
-      padding:0 10px;
-    }
+    .sizes{ display:flex; gap:6px; }
+    .sizes button{ height:30px; font-size:12px; }
     .range{
+      margin-left:auto;
       display:flex;
       align-items:center;
       gap:8px;
-      margin-left:auto;
-      min-width:280px;
+      min-width:260px;
     }
-    .range input{
-      height:auto;
-      padding:0;
-    }
-    #previewWidth{
-      font-size:12px;
-      color:#4b5563;
-      min-width:58px;
-      text-align:right;
-      font-weight:600;
-    }
+    .range input{ height:auto; padding:0; }
+    #widthValue{ min-width:58px; font-size:12px; color:#526075; text-align:right; }
     .frame-wrap{
-      border:1px solid #d8e1ea;
+      border:1px solid #d8e2ed;
       border-radius:10px;
-      background:#eef3f8;
-      min-height:600px;
+      background:#eaf0f7;
       padding:10px;
       overflow:auto;
+      min-height:620px;
     }
     iframe{
+      display:block;
       width:100%;
       min-width:280px;
       height:640px;
-      border:1px dashed #b9c7d8;
+      border:1px dashed #b8c8dc;
       border-radius:10px;
       background:#fff;
-      display:block;
       margin:0 auto;
     }
     pre{
@@ -171,29 +124,26 @@
       font-size:12px;
       line-height:1.45;
       white-space:pre-wrap;
-      overflow:auto;
       max-height:220px;
+      overflow:auto;
     }
-    @media(max-width:1100px){
-      .page{
-        grid-template-columns:1fr;
-      }
-      .range{
-        margin-left:0;
-      }
+    @media(max-width:1024px){
+      .page{ grid-template-columns:1fr; }
+      .range{ margin-left:0; }
     }
   </style>
 </head>
 <body>
   <div class="page">
     <section class="panel">
-      <h1>Playground Widget</h1>
-      <p>Configura il widget e testa rapidamente comportamento mobile/laptop.</p>
+      <h1>Widget Playground</h1>
+      <p>Test rapido della nuova versione semplice.</p>
       <form id="controls" class="controls">
         <div class="row">
           <label for="source">Source</label>
           <input id="source" name="source" value="andreaadelfio" required>
         </div>
+
         <div class="row-2">
           <div class="row">
             <label for="sourceType">Source Type</label>
@@ -206,26 +156,15 @@
             </select>
           </div>
           <div class="row">
-            <label for="layout">Layout</label>
-            <select id="layout" name="layout">
-              <option value="grid">grid</option>
-              <option value="list">list</option>
-              <option value="cards">cards</option>
+            <label for="mode">Mode</label>
+            <select id="mode" name="mode">
+              <option value="extended" selected>extended</option>
+              <option value="compact">compact</option>
             </select>
           </div>
         </div>
-        <div class="row">
-          <label for="mode">Mode</label>
-          <select id="mode" name="mode">
-            <option value="extended" selected>extended</option>
-            <option value="compact">compact</option>
-          </select>
-        </div>
+
         <div class="row-2">
-          <div class="row">
-            <label for="limit">Limit</label>
-            <input id="limit" name="limit" type="number" min="1" max="50" value="10">
-          </div>
           <div class="row">
             <label for="photoSize">Photo Size</label>
             <select id="photoSize" name="photoSize">
@@ -236,7 +175,12 @@
               <option value="large">large</option>
             </select>
           </div>
+          <div class="row">
+            <label for="limit">Limit</label>
+            <input id="limit" name="limit" type="number" min="1" max="50" value="10">
+          </div>
         </div>
+
         <div class="row-2">
           <div class="row">
             <label for="theme">Theme</label>
@@ -252,6 +196,7 @@
             <input id="title" name="title" value="View my observations on">
           </div>
         </div>
+
         <div class="row-2">
           <div class="row">
             <label for="orderBy">Order By</label>
@@ -265,6 +210,7 @@
             </select>
           </div>
         </div>
+
         <div class="row-2">
           <div class="row">
             <label for="radius">Radius</label>
@@ -275,14 +221,14 @@
             <input id="padding" name="padding" type="number" min="0" max="50" value="14">
           </div>
         </div>
-        <div class="checks">
-          <label class="check"><input id="showTitle" name="showTitle" type="checkbox" checked>show title</label>
-          <label class="check"><input id="showLocation" name="showLocation" type="checkbox" checked>show location</label>
-          <label class="check"><input id="showGrade" name="showGrade" type="checkbox">show grade</label>
-          <label class="check"><input id="showNotes" name="showNotes" type="checkbox">show notes</label>
-        </div>
+
+        <label class="check">
+          <input id="showTitle" name="showTitle" type="checkbox" checked>
+          show title
+        </label>
+
         <div class="actions">
-          <button class="primary" type="submit">Aggiorna Preview</button>
+          <button class="primary" type="submit">Aggiorna</button>
           <button id="reset" type="button">Reset</button>
         </div>
       </form>
@@ -290,21 +236,23 @@
 
     <section class="panel">
       <div class="preview-head">
-        <div class="size-buttons">
-          <button class="size" data-width="390" type="button">Mobile 390</button>
-          <button class="size" data-width="768" type="button">Tablet 768</button>
-          <button class="size" data-width="1200" type="button">Laptop 1200</button>
-          <button class="size" data-width="1600" type="button">Wide 1600</button>
+        <div class="sizes">
+          <button type="button" data-width="390">Mobile 390</button>
+          <button type="button" data-width="768">Tablet 768</button>
+          <button type="button" data-width="1200">Laptop 1200</button>
+          <button type="button" data-width="1600">Wide 1600</button>
         </div>
         <div class="range">
-          <label for="widthRange">Larghezza preview</label>
+          <label for="widthRange">Larghezza</label>
           <input id="widthRange" type="range" min="300" max="1600" value="1200">
-          <span id="previewWidth">1200px</span>
+          <span id="widthValue">1200px</span>
         </div>
       </div>
+
       <div class="frame-wrap">
-        <iframe id="preview" title="Widget preview"></iframe>
+        <iframe id="preview" title="preview widget"></iframe>
       </div>
+
       <pre id="snippet"></pre>
     </section>
   </div>
@@ -316,37 +264,40 @@
       const defaults = {
         source: 'andreaadelfio',
         sourceType: 'user',
-        layout: 'grid',
         mode: 'extended',
-        limit: '10',
         photoSize: 'medium',
+        limit: '10',
         theme: 'light',
         title: 'View my observations on',
         orderBy: 'observed_on',
         order: 'desc',
         radius: '14',
         padding: '14',
-        showTitle: true,
-        showLocation: true,
-        showGrade: false,
-        showNotes: false
+        showTitle: true
       };
 
       const form = document.getElementById('controls');
-      const frame = document.getElementById('preview');
+      const preview = document.getElementById('preview');
       const snippet = document.getElementById('snippet');
       const widthRange = document.getElementById('widthRange');
-      const previewWidth = document.getElementById('previewWidth');
+      const widthValue = document.getElementById('widthValue');
       const resetButton = document.getElementById('reset');
       const widthButtons = Array.from(document.querySelectorAll('button[data-width]'));
 
-      function setFormValues(values){
+      function escapeAttr(value){
+        return String(value)
+          .replace(/&/g, '&amp;')
+          .replace(/"/g, '&quot;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+      }
+
+      function setForm(values){
         form.source.value = values.source;
         form.sourceType.value = values.sourceType;
-        form.layout.value = values.layout;
         form.mode.value = values.mode;
-        form.limit.value = values.limit;
         form.photoSize.value = values.photoSize;
+        form.limit.value = values.limit;
         form.theme.value = values.theme;
         form.title.value = values.title;
         form.orderBy.value = values.orderBy;
@@ -354,70 +305,48 @@
         form.radius.value = values.radius;
         form.padding.value = values.padding;
         form.showTitle.checked = values.showTitle;
-        form.showLocation.checked = values.showLocation;
-        form.showGrade.checked = values.showGrade;
-        form.showNotes.checked = values.showNotes;
       }
 
-      function readOptions(){
+      function getForm(){
         return {
           source: form.source.value.trim(),
           sourceType: form.sourceType.value.trim(),
-          layout: form.layout.value.trim(),
           mode: form.mode.value.trim(),
-          limit: form.limit.value.trim(),
           photoSize: form.photoSize.value.trim(),
+          limit: form.limit.value.trim(),
           theme: form.theme.value.trim(),
           title: form.title.value.trim(),
           orderBy: form.orderBy.value.trim(),
           order: form.order.value.trim(),
           radius: form.radius.value.trim(),
           padding: form.padding.value.trim(),
-          showTitle: form.showTitle.checked,
-          showLocation: form.showLocation.checked,
-          showGrade: form.showGrade.checked,
-          showNotes: form.showNotes.checked
+          showTitle: form.showTitle.checked
         };
       }
 
-      function escapeHtml(value){
-        return String(value)
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;');
-      }
-
-      function attrsForSnippet(opts){
-        const esc = (value) => escapeHtml(String(value));
+      function buildWidgetHtml(opts){
         return [
-          'data-inat-widget',
-          `data-inat-source="${esc(opts.source)}"`,
-          `data-inat-source-type="${esc(opts.sourceType)}"`,
-          `data-inat-layout="${esc(opts.layout)}"`,
-          `data-inat-mode="${esc(opts.mode)}"`,
-          `data-inat-limit="${esc(opts.limit)}"`,
-          `data-inat-order-by="${esc(opts.orderBy)}"`,
-          `data-inat-order="${esc(opts.order)}"`,
-          `data-inat-theme="${esc(opts.theme)}"`,
-          `data-inat-title="${esc(opts.title)}"`,
-          `data-inat-show-title="${opts.showTitle}"`,
-          `data-inat-show-location="${opts.showLocation}"`,
-          `data-inat-show-grade="${opts.showGrade}"`,
-          `data-inat-show-notes="${opts.showNotes}"`,
-          `data-inat-photo-size="${esc(opts.photoSize)}"`,
-          `data-inat-radius="${esc(opts.radius)}"`,
-          `data-inat-padding="${esc(opts.padding)}"`
-        ];
-      }
-
-      function buildWidgetDiv(opts){
-        return `<div\n  ${attrsForSnippet(opts).join('\n  ')}\n></div>`;
+          '<div',
+          '  data-inat-widget',
+          `  data-inat-source="${escapeAttr(opts.source)}"`,
+          `  data-inat-source-type="${escapeAttr(opts.sourceType)}"`,
+          `  data-inat-mode="${escapeAttr(opts.mode)}"`,
+          `  data-inat-photo-size="${escapeAttr(opts.photoSize)}"`,
+          `  data-inat-limit="${escapeAttr(opts.limit)}"`,
+          `  data-inat-theme="${escapeAttr(opts.theme)}"`,
+          `  data-inat-title="${escapeAttr(opts.title)}"`,
+          `  data-inat-order-by="${escapeAttr(opts.orderBy)}"`,
+          `  data-inat-order="${escapeAttr(opts.order)}"`,
+          `  data-inat-radius="${escapeAttr(opts.radius)}"`,
+          `  data-inat-padding="${escapeAttr(opts.padding)}"`,
+          `  data-inat-show-title="${opts.showTitle}"`,
+          '></div>'
+        ].join('\n');
       }
 
       function buildSrcdoc(opts){
-        const baseHref = escapeHtml(window.location.href);
-        const widgetDiv = buildWidgetDiv(opts);
+        const baseHref = escapeAttr(window.location.href);
+        const widget = buildWidgetHtml(opts);
         return [
           '<!doctype html>',
           '<html lang="it"><head>',
@@ -425,29 +354,26 @@
           '<meta name="viewport" content="width=device-width, initial-scale=1">',
           `<base href="${baseHref}">`,
           '<link rel="stylesheet" href="./inat-widget-custom.css">',
-          '<style>',
-          'html,body{margin:0;padding:0;background:#e9eef5;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;}',
-          'main{padding:16px;}',
-          '</style>',
+          '<style>html,body{margin:0;padding:0;background:#e8eef6;}main{padding:16px;}</style>',
           '</head><body><main>',
-          widgetDiv,
+          widget,
           '</main>',
           '<script src="./inat-widget-custom.js"><\/script>',
           '</body></html>'
         ].join('');
       }
 
-      function setPreviewWidth(width){
-        const px = Math.max(300, Math.min(1600, Number(width) || 1200));
-        frame.style.width = `${px}px`;
-        previewWidth.textContent = `${px}px`;
+      function setPreviewWidth(value){
+        const px = Math.max(300, Math.min(1600, Number(value) || 1200));
+        preview.style.width = `${px}px`;
         widthRange.value = String(px);
+        widthValue.textContent = `${px}px`;
       }
 
       function render(){
-        const opts = readOptions();
-        frame.srcdoc = buildSrcdoc(opts);
-        snippet.textContent = buildWidgetDiv(opts);
+        const opts = getForm();
+        preview.srcdoc = buildSrcdoc(opts);
+        snippet.textContent = buildWidgetHtml(opts);
       }
 
       form.addEventListener('submit', (event) => {
@@ -456,7 +382,7 @@
       });
 
       resetButton.addEventListener('click', () => {
-        setFormValues(defaults);
+        setForm(defaults);
         render();
       });
 
@@ -470,7 +396,7 @@
         });
       });
 
-      setFormValues(defaults);
+      setForm(defaults);
       setPreviewWidth(1200);
       render();
     })();

@@ -1,11 +1,12 @@
 # iNaturalist Widget (custom)
 
-Widget JavaScript/CSS standalone per mostrare osservazioni iNaturalist tramite attributi `data-*` su un `div`.
+Widget JavaScript/CSS standalone per mostrare osservazioni iNaturalist.
 
 ## File
 
-- `inat-widget-custom.js`: loader e renderer del widget.
-- `inat-widget-custom.css`: stili del widget.
+- `inat-widget-custom.js`: loader, fetch API e rendering.
+- `inat-widget-custom.css`: stili widget.
+- `test-widget.html`: playground per test veloci.
 
 ## Uso base
 
@@ -17,93 +18,49 @@ Widget JavaScript/CSS standalone per mostrare osservazioni iNaturalist tramite a
   data-inat-widget
   data-inat-source="andreaadelfio"
   data-inat-source-type="user"
-  data-inat-limit="12"
-  data-inat-layout="grid"
+  data-inat-mode="extended"
   data-inat-theme="light"
+  data-inat-limit="10"
 ></div>
 ```
 
-## Valori da mettere nel `div`
+## Modalita
 
-Il widget legge gli attributi `data-*` in camelCase interno. Esempio: `data-inat-source` -> `inatSource`.
+- `data-inat-mode="compact"`
+  - sempre compatta, sia mobile che desktop.
+- `data-inat-mode="extended"`
+  - estesa su desktop/laptop.
+  - su mobile (`<=760px`) collassa automaticamente in compatta.
 
-## Modalita consigliate
+## Attributi principali
 
-- Home (sempre compatta): `data-inat-mode="compact"`
-- Pagina photography (estesa): `data-inat-mode="extended"`  
-  Su mobile la modalita `extended` collassa automaticamente in compatta.
+| Attributo | Default | Valori |
+|---|---|---|
+| `data-inat-widget` | - | abilita widget |
+| `data-inat-source` | - | username/id/URL in base al source type |
+| `data-inat-source-type` | `user` | `user`, `project`, `place`, `taxon`, `observation` |
+| `data-inat-mode` | `extended` | `compact`, `extended` |
+| `data-inat-theme` | `light` | `light`, `dark`, `transparent-light`, `transparent-dark` |
+| `data-inat-photo-size` | `auto` | `auto`, `square`, `small`, `medium`, `large` |
+| `data-inat-limit` | `10` | intero `1..50` |
+| `data-inat-order-by` | `observed_on` | stringa API iNaturalist |
+| `data-inat-order` | `desc` | `asc`, `desc` |
+| `data-inat-title` | `View my observations on` | stringa |
+| `data-inat-show-title` | `true` | boolean |
+| `data-inat-padding` | `14` | intero `0..50` |
+| `data-inat-radius` | `14` | intero `0..50` |
 
-### Attributi obbligatori
+## Filtri opzionali
 
-- `data-inat-widget`: abilita il widget su quel `div`.
-- `data-inat-source`: sorgente principale (utente/id/URL in base a `data-inat-source-type`).
+- `data-inat-taxon`
+- `data-inat-quality` oppure `data-inat-quality-grade`
+- `data-inat-date`
+- `data-inat-date-from`
+- `data-inat-date-to`
 
-### Attributi opzionali
+## Playground
 
-| Attributo | Default | Valori possibili | Note |
-|---|---|---|---|
-| `data-inat-source-type` | `user` | `user`, `project`, `place`, `taxon`, `observation` | Tipo sorgente usato per la query API. |
-| `data-inat-limit` | `10` | intero `1..50` | Numero massimo osservazioni. |
-| `data-inat-order` | `desc` | `asc`, `desc` | Ordinamento crescente/decrescente. |
-| `data-inat-order-by` | `observed_on` | stringa libera (passata all'API iNat) | Campo su cui ordinare. |
-| `data-inat-layout` | `grid` | `grid`, `list`, `cards` | Layout del widget. |
-| `data-inat-mode` | `extended` | `compact`, `extended` | `compact` sempre compatta; `extended` su mobile (`<=760px`) diventa compatta. |
-| `data-inat-theme` | `light` | `light`, `dark`, `transparent-light`, `transparent-dark` | Tema grafico. |
-| `data-inat-title` | `View my observations on` | stringa | Testo header (se titolo visibile). |
-| `data-inat-user-icon` | auto/fallback | URL immagine | Override avatar header. |
-| `data-inat-taxon` | vuoto | id taxon (stringa/numero) | Filtro taxon aggiuntivo (ignorato se `source-type=taxon`). |
-| `data-inat-quality` | vuoto | es. `research`, `needs_id`, `casual`, `any` | Filtro quality grade. |
-| `data-inat-quality-grade` | vuoto | come sopra | Alias di `data-inat-quality`. |
-| `data-inat-date` | vuoto | data (es. `2025-07-15`) | Filtra giorno esatto (`on`); ha priorita su range. |
-| `data-inat-date-from` | vuoto | data (es. `2025-01-01`) | Inizio range (`d1`). |
-| `data-inat-date-to` | vuoto | data (es. `2025-12-31`) | Fine range (`d2`). |
-| `data-inat-show-title` | `true` | boolean | Mostra/nasconde testo titolo in header. |
-| `data-inat-show-location` | `true` | boolean | Mostra location (layout `cards`). |
-| `data-inat-show-grade` | `false` | boolean | Mostra quality grade (`list`/`cards`). |
-| `data-inat-show-notes` | `false` | boolean | Mostra note osservazione (`cards`). |
-| `data-inat-radius` | `12` | intero `0..50` | Border radius contenitore/card. |
-| `data-inat-padding` | `16` | intero `0..50` | Padding interno contenitore. |
-| `data-inat-photo-size` | `auto` | `auto`, `square`, `small`, `medium`, `large` | Regola dimensione foto e fit della grid anche in compact (densita/numero tile). In compact e applicata una densita minima di colonne per evitare tile troppo grandi su schermi stretti. |
-
-Nota: la modalita compatta dipende da `data-inat-mode`. In `extended` la `grid` diventa compatta solo su mobile (`<=760px`), in `compact` resta compatta su ogni schermo.
-
-## Come impostare `data-inat-source`
-
-- `data-inat-source-type="user"`: username iNaturalist (es. `andreaadelfio`).
-- `data-inat-source-type="project"`: `project_id`.
-- `data-inat-source-type="place"`: `place_id`.
-- `data-inat-source-type="taxon"`: `taxon_id`.
-- `data-inat-source-type="observation"`: ID osservazione o URL tipo `https://www.inaturalist.org/observations/123456`.
-
-## Parsing boolean
-
-Per gli attributi boolean, questi valori vengono interpretati come `false`:
-
-- `false`
-- `0`
-- `no`
-
-Qualsiasi altro valore non vuoto viene interpretato come `true`.
-
-## Esempio completo
-
-```html
-<div
-  data-inat-widget
-  data-inat-source="andreaadelfio"
-  data-inat-source-type="user"
-  data-inat-limit="8"
-  data-inat-order="desc"
-  data-inat-order-by="observed_on"
-  data-inat-layout="cards"
-  data-inat-theme="transparent-light"
-  data-inat-title="Le mie osservazioni su"
-  data-inat-quality="research"
-  data-inat-date-from="2025-01-01"
-  data-inat-date-to="2025-12-31"
-  data-inat-show-grade="true"
-  data-inat-show-notes="true"
-  data-inat-radius="14"
-  data-inat-padding="18"
-></div>
-```
+Apri `test-widget.html` per provare:
+- mode compact/extended
+- larghezza preview mobile/tablet/laptop
+- photo size e altri parametri
