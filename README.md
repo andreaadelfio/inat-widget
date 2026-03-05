@@ -50,6 +50,10 @@ Widget JavaScript/CSS standalone per mostrare osservazioni iNaturalist.
 | `data-inat-padding` | `14` | intero `0..50` |
 | `data-inat-radius` | `14` | intero `0..50` |
 
+Nota su `data-inat-photo-size`:
+- controlla la compattezza del layout (dimensione tile/colonne).
+- il widget scarica automaticamente una variante foto leggermente piu grande per mantenere nitidezza.
+
 ## Filtri opzionali
 
 - `data-inat-taxon`

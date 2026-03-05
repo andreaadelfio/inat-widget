@@ -374,6 +374,7 @@
       wrap.className = `inat-w-grid ${compact ? 'inat-mode-compact' : 'inat-mode-extended'}`;
 
       const photoSize = this.getEffectivePhotoSize();
+      const photoAssetSize = this.getPhotoAssetSize(photoSize);
 
       this.observations.forEach((obs) => {
         const item = document.createElement('a');
@@ -382,7 +383,7 @@
         item.target = '_blank';
         item.rel = 'noopener noreferrer';
 
-        const photo = this.getPhotoUrl(obs, photoSize);
+        const photo = this.getPhotoUrl(obs, photoAssetSize);
         if(photo){
           const image = document.createElement('img');
           image.className = 'inat-w-grid-img';
@@ -444,6 +445,32 @@
 
     getScientificName(obs){
       return obs?.taxon?.name || '';
+    }
+
+    getPhotoAssetSize(layoutSize){
+      const size = String(layoutSize || '').toLowerCase();
+      const dpr = (typeof window !== 'undefined' && Number.isFinite(window.devicePixelRatio))
+        ? window.devicePixelRatio
+        : 1;
+
+      const standardMap = {
+        square: 'small',
+        small: 'medium',
+        medium: 'large',
+        large: 'large',
+        auto: 'medium'
+      };
+
+      const hiDpiMap = {
+        square: 'medium',
+        small: 'large',
+        medium: 'large',
+        large: 'large',
+        auto: 'large'
+      };
+
+      const map = dpr >= 1.5 ? hiDpiMap : standardMap;
+      return map[size] || 'medium';
     }
 
     getPhotoUrl(obs, size){
