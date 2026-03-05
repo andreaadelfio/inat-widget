@@ -214,6 +214,13 @@
             </select>
           </div>
         </div>
+        <div class="row">
+          <label for="mode">Mode</label>
+          <select id="mode" name="mode">
+            <option value="extended" selected>extended</option>
+            <option value="compact">compact</option>
+          </select>
+        </div>
         <div class="row-2">
           <div class="row">
             <label for="limit">Limit</label>
@@ -310,6 +317,7 @@
         source: 'andreaadelfio',
         sourceType: 'user',
         layout: 'grid',
+        mode: 'extended',
         limit: '10',
         photoSize: 'medium',
         theme: 'light',
@@ -336,6 +344,7 @@
         form.source.value = values.source;
         form.sourceType.value = values.sourceType;
         form.layout.value = values.layout;
+        form.mode.value = values.mode;
         form.limit.value = values.limit;
         form.photoSize.value = values.photoSize;
         form.theme.value = values.theme;
@@ -355,6 +364,7 @@
           source: form.source.value.trim(),
           sourceType: form.sourceType.value.trim(),
           layout: form.layout.value.trim(),
+          mode: form.mode.value.trim(),
           limit: form.limit.value.trim(),
           photoSize: form.photoSize.value.trim(),
           theme: form.theme.value.trim(),
@@ -385,6 +395,7 @@
           `data-inat-source="${esc(opts.source)}"`,
           `data-inat-source-type="${esc(opts.sourceType)}"`,
           `data-inat-layout="${esc(opts.layout)}"`,
+          `data-inat-mode="${esc(opts.mode)}"`,
           `data-inat-limit="${esc(opts.limit)}"`,
           `data-inat-order-by="${esc(opts.orderBy)}"`,
           `data-inat-order="${esc(opts.order)}"`,

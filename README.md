@@ -27,6 +27,12 @@ Widget JavaScript/CSS standalone per mostrare osservazioni iNaturalist tramite a
 
 Il widget legge gli attributi `data-*` in camelCase interno. Esempio: `data-inat-source` -> `inatSource`.
 
+## Modalita consigliate
+
+- Home (sempre compatta): `data-inat-mode="compact"`
+- Pagina photography (estesa): `data-inat-mode="extended"`  
+  Su mobile la modalita `extended` collassa automaticamente in compatta.
+
 ### Attributi obbligatori
 
 - `data-inat-widget`: abilita il widget su quel `div`.
@@ -41,6 +47,7 @@ Il widget legge gli attributi `data-*` in camelCase interno. Esempio: `data-inat
 | `data-inat-order` | `desc` | `asc`, `desc` | Ordinamento crescente/decrescente. |
 | `data-inat-order-by` | `observed_on` | stringa libera (passata all'API iNat) | Campo su cui ordinare. |
 | `data-inat-layout` | `grid` | `grid`, `list`, `cards` | Layout del widget. |
+| `data-inat-mode` | `extended` | `compact`, `extended` | `compact` sempre compatta; `extended` su mobile (`<=760px`) diventa compatta. |
 | `data-inat-theme` | `light` | `light`, `dark`, `transparent-light`, `transparent-dark` | Tema grafico. |
 | `data-inat-title` | `View my observations on` | stringa | Testo header (se titolo visibile). |
 | `data-inat-user-icon` | auto/fallback | URL immagine | Override avatar header. |
@@ -58,7 +65,7 @@ Il widget legge gli attributi `data-*` in camelCase interno. Esempio: `data-inat
 | `data-inat-padding` | `16` | intero `0..50` | Padding interno contenitore. |
 | `data-inat-photo-size` | `auto` | `auto`, `square`, `small`, `medium`, `large` | Regola dimensione foto e fit della grid anche in compact (densita/numero tile). Con `auto`: mobile tende a `small`, desktop a `medium`. |
 
-Nota: la `grid` e automatica in base alla viewport (`mobile <=760px` sempre compact, laptop/desktop non compact).
+Nota: la modalita compatta dipende da `data-inat-mode`. In `extended` la `grid` diventa compatta solo su mobile (`<=760px`), in `compact` resta compatta su ogni schermo.
 
 ## Come impostare `data-inat-source`
 

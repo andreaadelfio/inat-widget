@@ -46,6 +46,7 @@
       this.orderBy = this.readString('inatOrderBy') || 'observed_on';
       this.order = this.readEnum('inatOrder', ['asc', 'desc'], 'desc');
       this.layout = this.readEnum('inatLayout', ['grid', 'list', 'cards'], 'grid');
+      this.mode = this.readEnum('inatMode', ['compact', 'extended'], 'extended');
       this.theme = this.readEnum('inatTheme', ['light', 'dark', 'transparent-light', 'transparent-dark'], 'light');
       this.title = this.readString('inatTitle') || 'View my observations on';
       this.userIcon = this.readString('inatUserIcon');
@@ -104,7 +105,11 @@
       this.onViewportChange = () => {
         if(!this.observations.length) return;
         if(this.layout === 'grid'){
-          this.renderGrid();
+          if(this.mode === 'extended'){
+            this.renderGrid();
+          }else{
+            this.applyCompactGridLayout();
+          }
           return;
         }
         if(this.layout === 'cards' && this.photoSize === 'auto'){
@@ -127,6 +132,7 @@
     }
 
     isCompactLayout(){
+      if(this.mode === 'compact') return true;
       return Boolean(this.viewportMql && this.viewportMql.matches);
     }
 
