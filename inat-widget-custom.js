@@ -58,7 +58,6 @@
       this.showLocation = this.readBool('inatShowLocation', true);
       this.showGrade = this.readBool('inatShowGrade', false);
       this.showNotes = this.readBool('inatShowNotes', false);
-      this.compactLegacy = this.readBool('inatCompact', false);
       this.borderRadius = this.readInt('inatRadius', 12, 0, 50);
       this.padding = this.readInt('inatPadding', 16, 0, 50);
       this.photoSize = this.readEnum('inatPhotoSize', ['auto', 'square', 'small', 'medium', 'large'], 'auto');
@@ -125,8 +124,14 @@
       }
       this.onWindowResize = () => {
         if(!this.observations.length) return;
-        if(this.layout !== 'grid' || !this.isCompactLayout()) return;
-        this.applyCompactGridLayout();
+        if(this.layout !== 'grid') return;
+        if(!this.viewportMql){
+          this.renderGrid();
+          return;
+        }
+        if(this.isCompactLayout()){
+          this.applyCompactGridLayout();
+        }
       };
       window.addEventListener('resize', this.onWindowResize);
     }
@@ -136,17 +141,20 @@
     }
 
     isCompactLayout(){
+      if(typeof window === 'undefined'){
+        return false;
+      }
       if(this.viewportMql){
         return this.isMobileViewport();
       }
-      return this.compactLegacy;
+      return window.innerWidth <= MOBILE_BREAKPOINT;
     }
 
     resolvePhotoSize(desktopSize){
       if(this.photoSize && this.photoSize !== 'auto'){
         return this.photoSize;
       }
-      return this.isMobileViewport() ? 'small' : desktopSize;
+      return this.isCompactLayout() ? 'small' : desktopSize;
     }
 
     resolveGridSizing(){
