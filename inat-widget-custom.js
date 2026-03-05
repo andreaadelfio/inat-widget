@@ -148,25 +148,6 @@
       return sizeMap[this.photoSize] || sizeMap.auto;
     }
 
-    resolveCompactGridColumns(width, itemCount, minTile, gap){
-      let maxCols = Math.floor((width + gap) / (minTile + gap));
-      maxCols = Math.max(1, Math.min(maxCols, itemCount));
-      let bestCols = maxCols;
-      let bestScore = Number.POSITIVE_INFINITY;
-
-      for(let cols = 1; cols <= maxCols; cols += 1){
-        const rows = Math.ceil(itemCount / cols);
-        const holes = (rows * cols) - itemCount;
-        const compactPenalty = Math.pow(maxCols - cols, 2);
-        const score = (holes * 10) + compactPenalty;
-        if(score < bestScore){
-          bestScore = score;
-          bestCols = cols;
-        }
-      }
-      return bestCols;
-    }
-
     applyCompactGridLayout(){
       if(this.layout !== 'grid' || !this.isCompactLayout()) return;
       if(!this.gridEl) return;
@@ -179,7 +160,10 @@
       const gridSizing = this.resolveGridSizing();
       const minTile = gridSizing.compactMin;
       const gap = gridSizing.compactGap;
-      const cols = this.resolveCompactGridColumns(width, itemCount, minTile, gap);
+      const cols = Math.max(
+        1,
+        Math.min(itemCount, Math.floor((width + gap) / (minTile + gap)))
+      );
       this.gridEl.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
     }
 
