@@ -13,6 +13,7 @@
   --inat-grid-gap:8px;
   --inat-grid-min-mobile:115px;
   --inat-grid-gap-mobile:8px;
+  --inat-grid-cols:1;
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
   line-height:1.45;
   color:var(--inat-text);
@@ -144,7 +145,7 @@
 
 .inat-w-grid{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(var(--inat-grid-min),1fr));
+  grid-template-columns:repeat(var(--inat-grid-cols),minmax(0,1fr));
   gap:var(--inat-grid-gap);
   grid-auto-flow:dense;
 }
@@ -409,10 +410,7 @@
   .inat-w-header-logo{
     height:16px;
   }
-  .inat-w-grid{
-    grid-template-columns:repeat(auto-fit,minmax(var(--inat-grid-min-mobile),1fr));
-    gap:var(--inat-grid-gap-mobile);
-  }
+  .inat-w-grid{ gap:var(--inat-grid-gap-mobile); }
   .inat-w-cards{
     grid-template-columns:1fr;
   }
