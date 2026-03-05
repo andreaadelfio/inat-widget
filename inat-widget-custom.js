@@ -68,7 +68,6 @@
       ensureStylesheet();
       this.renderShell();
       this.bindViewportListener();
-      this.bindLayoutObserver();
       this.fetchObservations();
     }
 
@@ -104,25 +103,15 @@
       if(!this.viewportMql) return;
       this.onViewportChange = () => {
         if(!this.observations.length) return;
-        if(this.photoSize === 'auto' && (this.layout === 'grid' || this.layout === 'cards')){
-          this.renderObservations();
-          return;
-        }
-        this.updateGridColumns();
+        if(this.photoSize !== 'auto') return;
+        if(this.layout !== 'grid' && this.layout !== 'cards') return;
+        this.renderObservations();
       };
       if(typeof this.viewportMql.addEventListener === 'function'){
         this.viewportMql.addEventListener('change', this.onViewportChange);
       }else if(typeof this.viewportMql.addListener === 'function'){
         this.viewportMql.addListener(this.onViewportChange);
       }
-    }
-
-    bindLayoutObserver(){
-      if(typeof ResizeObserver !== 'function') return;
-      this.resizeObserver = new ResizeObserver(() => {
-        this.updateGridColumns();
-      });
-      this.resizeObserver.observe(this.container);
     }
 
     isMobileViewport(){
@@ -138,28 +127,13 @@
 
     resolveGridSizing(){
       const sizeMap = {
-        auto: { desktopMin: 145, mobileMin: 76, desktopGap: 8, mobileGap: 4 },
-        square: { desktopMin: 82, mobileMin: 68, desktopGap: 4, mobileGap: 4 },
-        small: { desktopMin: 108, mobileMin: 76, desktopGap: 6, mobileGap: 4 },
-        medium: { desktopMin: 145, mobileMin: 115, desktopGap: 8, mobileGap: 8 },
-        large: { desktopMin: 175, mobileMin: 132, desktopGap: 10, mobileGap: 8 }
+        auto: { desktopMin: 150, mobileMin: 72, desktopGap: 8, mobileGap: 4 },
+        square: { desktopMin: 84, mobileMin: 64, desktopGap: 4, mobileGap: 4 },
+        small: { desktopMin: 102, mobileMin: 72, desktopGap: 6, mobileGap: 4 },
+        medium: { desktopMin: 150, mobileMin: 118, desktopGap: 8, mobileGap: 8 },
+        large: { desktopMin: 190, mobileMin: 136, desktopGap: 10, mobileGap: 8 }
       };
       return sizeMap[this.photoSize] || sizeMap.auto;
-    }
-
-    updateGridColumns(){
-      if(this.layout !== 'grid' || this.compact) return;
-      if(!this.container) return;
-
-      const gridSizing = this.resolveGridSizing();
-      const isMobile = this.isMobileViewport();
-      const minTile = isMobile ? gridSizing.mobileMin : gridSizing.desktopMin;
-      const gap = isMobile ? gridSizing.mobileGap : gridSizing.desktopGap;
-      const width = this.contentEl?.clientWidth || this.container.clientWidth || 0;
-      if(width <= 0) return;
-
-      const cols = Math.max(1, Math.floor((width + gap) / (minTile + gap)));
-      this.container.style.setProperty('--inat-grid-cols', String(cols));
     }
 
     renderShell(){
@@ -448,10 +422,6 @@
 
       this.contentEl.innerHTML = '';
       this.contentEl.appendChild(wrap);
-      this.updateGridColumns();
-      if(typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function'){
-        window.requestAnimationFrame(() => this.updateGridColumns());
-      }
     }
 
     renderList(){
