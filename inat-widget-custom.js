@@ -9,6 +9,7 @@
 
   const INAT_API = 'https://api.inaturalist.org/v1';
   const STYLESHEET_ID = 'inat-widget-custom-stylesheet';
+  const OBSERVATIONS_PAGE_SIZE = 30;
 
   function resolveStylesheetHref(){
     const script = document.currentScript
@@ -75,6 +76,14 @@
       this.dateOn = this.readString('inatDate');
 
       this.observations = [];
+      this.pageSize = OBSERVATIONS_PAGE_SIZE;
+      this.nextPage = 1;
+      this.hasMoreObservations = this.sourceType !== 'observation';
+      this.currentCols = this.colsMode === 'fixed' ? Math.max(1, this.cols || 1) : 1;
+      this.visibleSlots = this.getInitialVisibleSlots();
+      this.isLoadingMore = false;
+      this.observationItemEls = [];
+      this.loadMoreButtonEl = null;
 
       ensureStylesheet();
       this.renderShell();
@@ -159,6 +168,15 @@
       }
 
       return {mode: 'auto', count: null};
+    }
+
+    getInitialVisibleSlots(){
+      const minSlots = this.sourceType === 'observation' ? 1 : 2;
+      const fallbackCols = this.colsMode === 'fixed' ? Math.max(1, this.cols || 1) : 4;
+      if(this.rowsMode === 'fixed'){
+        return Math.max(minSlots, Math.max(1, this.rows || 1) * fallbackCols);
+      }
+      return Math.max(minSlots, this.limit);
     }
 
     bindViewportHandlers(){
@@ -275,7 +293,9 @@
       const width = this.getGridWidth();
       if(width <= 0) return;
 
-      const itemCount = this.observations.length;
+      const itemCount = (this.gridItemEls || Array.from(this.gridEl.children))
+        .filter((item) => !item.hidden)
+        .length;
       if(itemCount <= 0) return;
 
       const metrics = this.getGridMetrics(width);
@@ -287,23 +307,41 @@
         cols = Math.max(1, Math.min(itemCount, Math.min(metrics.targetCols, maxColsByMinTile)));
       }
 
+      this.currentCols = cols;
       this.gridEl.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
       this.gridEl.style.gap = `${metrics.gap}px`;
-      this.applyRowVisibility(cols);
     }
 
-    applyRowVisibility(cols){
-      if(!this.gridItemEls?.length) return;
-      if(this.rowsMode !== 'fixed'){
-        this.gridItemEls.forEach((item) => {
-          item.hidden = false;
-        });
-        return;
+    getRowIncrement(){
+      if(Number.isFinite(this.currentCols) && this.currentCols > 0){
+        return Math.max(1, Math.floor(this.currentCols));
       }
-      const visibleCount = Math.max(1, (this.rows || 1) * Math.max(1, cols));
-      this.gridItemEls.forEach((item, index) => {
-        item.hidden = index >= visibleCount;
-      });
+      if(this.colsMode === 'fixed'){
+        return Math.max(1, this.cols || 1);
+      }
+      return 4;
+    }
+
+    getVisibleObservationCount(){
+      const maxSlots = Math.max(1, this.visibleSlots);
+      if(this.sourceType === 'observation'){
+        return Math.min(this.observations.length, maxSlots);
+      }
+
+      let visibleCount = Math.min(this.observations.length, Math.max(0, maxSlots - 1));
+      const hasHiddenFromBuffer = this.observations.length > visibleCount;
+      const shouldShowLoadMore = this.hasMoreObservations || hasHiddenFromBuffer;
+
+      if(!shouldShowLoadMore){
+        visibleCount = Math.min(this.observations.length, maxSlots);
+      }
+
+      return visibleCount;
+    }
+
+    shouldShowLoadMoreTile(visibleObservationCount){
+      if(this.sourceType === 'observation') return false;
+      return this.hasMoreObservations || this.observations.length > visibleObservationCount;
     }
 
     renderShell(){
@@ -474,6 +512,55 @@
       return match ? match[1] : source;
     }
 
+    buildObservationParams(page){
+      const params = new URLSearchParams();
+      params.set('page', String(page));
+      params.set('per_page', String(this.pageSize));
+      params.set('order', this.order);
+      params.set('order_by', this.orderBy);
+      params.set(this.getSourceParamName(), this.source);
+
+      if(this.taxon && this.sourceType !== 'taxon'){
+        params.set('taxon_id', this.taxon);
+      }
+      if(this.qualityGrade && this.qualityGrade !== 'any'){
+        params.set('quality_grade', this.qualityGrade);
+      }
+      if(this.dateOn){
+        params.set('on', this.dateOn);
+      }else{
+        if(this.dateFrom) params.set('d1', this.dateFrom);
+        if(this.dateTo) params.set('d2', this.dateTo);
+      }
+
+      return params;
+    }
+
+    async fetchObservationPage(page){
+      const params = this.buildObservationParams(page);
+      const response = await fetch(`${INAT_API}/observations?${params.toString()}`);
+      if(!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      const results = Array.isArray(data?.results) ? data.results : [];
+      if(results.length < this.pageSize){
+        this.hasMoreObservations = false;
+      }
+      this.nextPage = page + 1;
+      return results;
+    }
+
+    async ensureObservationsCount(minCount){
+      if(this.sourceType === 'observation') return;
+      while(this.observations.length < minCount && this.hasMoreObservations){
+        const results = await this.fetchObservationPage(this.nextPage);
+        if(!results.length){
+          this.hasMoreObservations = false;
+          break;
+        }
+        this.observations.push(...results);
+      }
+    }
+
     async fetchObservations(){
       if(!this.source){
         this.renderError('Missing source value.');
@@ -487,30 +574,12 @@
           if(!response.ok) throw new Error(`HTTP ${response.status}`);
           const data = await response.json();
           this.observations = Array.isArray(data?.results) ? data.results : [];
+          this.hasMoreObservations = false;
         }else{
-          const params = new URLSearchParams();
-          params.set('per_page', String(this.limit));
-          params.set('order', this.order);
-          params.set('order_by', this.orderBy);
-          params.set(this.getSourceParamName(), this.source);
-
-          if(this.taxon && this.sourceType !== 'taxon'){
-            params.set('taxon_id', this.taxon);
-          }
-          if(this.qualityGrade && this.qualityGrade !== 'any'){
-            params.set('quality_grade', this.qualityGrade);
-          }
-          if(this.dateOn){
-            params.set('on', this.dateOn);
-          }else{
-            if(this.dateFrom) params.set('d1', this.dateFrom);
-            if(this.dateTo) params.set('d2', this.dateTo);
-          }
-
-          const response = await fetch(`${INAT_API}/observations?${params.toString()}`);
-          if(!response.ok) throw new Error(`HTTP ${response.status}`);
-          const data = await response.json();
-          this.observations = Array.isArray(data?.results) ? data.results : [];
+          this.observations = [];
+          this.nextPage = 1;
+          this.hasMoreObservations = true;
+          await this.ensureObservationsCount(Math.max(1, this.visibleSlots - 1));
         }
 
         if(!this.observations.length){
@@ -527,70 +596,159 @@
       }
     }
 
+    async handleLoadMoreClick(){
+      if(this.isLoadingMore) return;
+
+      const previousVisibleSlots = this.visibleSlots;
+      this.visibleSlots += this.getRowIncrement();
+      this.isLoadingMore = true;
+      this.renderGrid();
+
+      try{
+        await this.ensureObservationsCount(Math.max(1, this.visibleSlots - 1));
+      }catch(error){
+        console.error('Could not load more observations:', error);
+        this.visibleSlots = previousVisibleSlots;
+      }finally{
+        this.isLoadingMore = false;
+      }
+
+      this.applyResolvedUserIcon();
+      this.renderGrid();
+    }
+
     renderError(message){
       this.contentEl.innerHTML = `<div class="inat-w-error">${this.escapeHtml(message)}</div>`;
     }
 
     renderGrid(){
-      const wrap = document.createElement('div');
-      wrap.className = 'inat-w-grid';
-
-      const gridWidth = this.contentEl?.clientWidth
-        || this.container.clientWidth
-        || (typeof window !== 'undefined' ? window.innerWidth : 0);
       const photoAssetSize = this.getPhotoAssetSize();
+      const visibleObservationCount = this.getVisibleObservationCount();
+      const showLoadMoreTile = this.shouldShowLoadMoreTile(visibleObservationCount);
 
-      this.observations.forEach((obs) => {
-        const item = document.createElement('a');
-        item.className = 'inat-w-grid-item';
-        item.href = this.getObservationUrl(obs);
-        item.target = '_blank';
-        item.rel = 'noopener noreferrer';
+      if(!this.gridEl){
+        const wrap = document.createElement('div');
+        wrap.className = 'inat-w-grid';
+        this.contentEl.innerHTML = '';
+        this.contentEl.appendChild(wrap);
+        this.gridEl = wrap;
+      }
 
-        const photo = this.getPhotoUrl(obs, photoAssetSize);
-        if(photo){
-          const image = document.createElement('img');
-          image.className = 'inat-w-grid-img';
-          image.src = photo;
-          image.alt = this.getCommonName(obs);
-          image.loading = 'lazy';
-          item.appendChild(image);
-        }else{
-          const fallback = document.createElement('div');
-          fallback.className = 'inat-w-no-photo';
-          fallback.textContent = this.noPhotoLabel(obs);
-          item.appendChild(fallback);
-        }
-
-        const overlay = document.createElement('div');
-        overlay.className = 'inat-w-grid-overlay';
-
-        const name = document.createElement('div');
-        name.className = 'inat-w-grid-name';
-        name.textContent = this.getCommonName(obs);
-        overlay.appendChild(name);
-
-        const sci = this.getScientificName(obs);
-        if(sci){
-          const sciLine = document.createElement('div');
-          sciLine.className = 'inat-w-grid-sci';
-          sciLine.textContent = sci;
-          overlay.appendChild(sciLine);
-        }
-
-        item.appendChild(overlay);
-
-        wrap.appendChild(item);
-      });
-
-      this.contentEl.innerHTML = '';
-      this.contentEl.appendChild(wrap);
-      this.gridEl = wrap;
-      this.gridItemEls = Array.from(wrap.children);
+      this.ensureObservationTiles(visibleObservationCount, photoAssetSize);
+      this.syncObservationTileVisibility(visibleObservationCount);
+      this.syncLoadMoreTileVisibility(showLoadMoreTile);
+      this.syncLoadMoreTileState();
+      this.gridItemEls = Array.from(this.gridEl.children);
       this.applyGridMetrics();
       if(typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function'){
         window.requestAnimationFrame(() => this.applyGridMetrics());
       }
+    }
+
+    ensureObservationTiles(targetCount, photoAssetSize){
+      while(this.observationItemEls.length < targetCount){
+        const index = this.observationItemEls.length;
+        const obs = this.observations[index];
+        if(!obs) break;
+        const item = this.createObservationTile(obs, photoAssetSize);
+        this.observationItemEls.push(item);
+        if(this.loadMoreButtonEl?.parentElement === this.gridEl){
+          this.gridEl.insertBefore(item, this.loadMoreButtonEl);
+        }else{
+          this.gridEl.appendChild(item);
+        }
+      }
+    }
+
+    syncObservationTileVisibility(visibleObservationCount){
+      this.observationItemEls.forEach((item, index) => {
+        item.hidden = index >= visibleObservationCount;
+      });
+    }
+
+    syncLoadMoreTileVisibility(showLoadMoreTile){
+      if(!showLoadMoreTile){
+        if(this.loadMoreButtonEl?.parentElement){
+          this.loadMoreButtonEl.remove();
+        }
+        return;
+      }
+
+      if(!this.loadMoreButtonEl){
+        this.loadMoreButtonEl = this.createLoadMoreTile();
+      }
+
+      if(this.loadMoreButtonEl.parentElement !== this.gridEl){
+        this.gridEl.appendChild(this.loadMoreButtonEl);
+      }
+      this.loadMoreButtonEl.hidden = false;
+    }
+
+    syncLoadMoreTileState(){
+      if(!this.loadMoreButtonEl) return;
+      this.loadMoreButtonEl.disabled = this.isLoadingMore;
+      this.loadMoreButtonEl.classList.toggle('is-loading', this.isLoadingMore);
+    }
+
+    createObservationTile(obs, photoAssetSize){
+      const item = document.createElement('a');
+      item.className = 'inat-w-grid-item';
+      item.href = this.getObservationUrl(obs);
+      item.target = '_blank';
+      item.rel = 'noopener noreferrer';
+
+      const photo = this.getPhotoUrl(obs, photoAssetSize);
+      if(photo){
+        const image = document.createElement('img');
+        image.className = 'inat-w-grid-img';
+        image.src = photo;
+        image.alt = this.getCommonName(obs);
+        image.loading = 'lazy';
+        item.appendChild(image);
+      }else{
+        const fallback = document.createElement('div');
+        fallback.className = 'inat-w-no-photo';
+        fallback.textContent = this.noPhotoLabel(obs);
+        item.appendChild(fallback);
+      }
+
+      const overlay = document.createElement('div');
+      overlay.className = 'inat-w-grid-overlay';
+
+      const name = document.createElement('div');
+      name.className = 'inat-w-grid-name';
+      name.textContent = this.getCommonName(obs);
+      overlay.appendChild(name);
+
+      const sci = this.getScientificName(obs);
+      if(sci){
+        const sciLine = document.createElement('div');
+        sciLine.className = 'inat-w-grid-sci';
+        sciLine.textContent = sci;
+        overlay.appendChild(sciLine);
+      }
+
+      item.appendChild(overlay);
+      return item;
+    }
+
+    createLoadMoreTile(){
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'inat-w-grid-item inat-w-load-more';
+      button.setAttribute('aria-label', 'Load one more row of observations');
+      button.title = 'Load one more row';
+
+      const plus = document.createElement('span');
+      plus.className = 'inat-w-load-more-plus';
+      plus.textContent = '+';
+      button.appendChild(plus);
+
+      button.addEventListener('click', () => {
+        this.handleLoadMoreClick();
+      });
+
+      return button;
     }
 
     getObservationUrl(obs){

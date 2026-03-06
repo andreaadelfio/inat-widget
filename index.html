@@ -5,18 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="./inat-widget-custom.css">
     <title>iNaturalist Widget | Andrea Adelfio</title>
-</head>
-<body>
+  </head>
+  <body>
     <div
-    data-inat-widget
-    data-inat-title="View my observations on"
-    data-inat-limit="15"
-    data-inat-tile-size="xs"
-    data-inat-cols-mode="fixed"
-    data-inat-cols="5"
-    data-inat-rows-mode="auto"
-    data-inat-source="andreaadelfio">
+      data-inat-widget
+      data-inat-title="View my observations on"
+      data-inat-limit="15"
+      data-inat-tile-size="xs"
+      data-inat-cols-mode="fixed"
+      data-inat-cols="5"
+      data-inat-rows-mode="auto"
+      data-inat-source="andreaadelfio">
     </div>
-    <script defer src="./inat-widget-custom.js"></script>
+
+    <div
+      data-inat-widget
+      data-inat-title="View my observations on"
+      data-inat-source="andreaadelfio"
+      data-inat-source-type="user"
+      data-inat-tile-size="s"
+      data-inat-cols-mode="fixed"
+      data-inat-cols="7"
+      data-inat-limit="21"
+      data-inat-theme="light"
+      data-inat-order-by="observed_on"
+      data-inat-order="desc"
+      data-inat-radius="14"
+      data-inat-padding="14"
+      data-inat-show-title="true"
+    ></div>
+    <script src="./inat-widget-custom.js"></script>
   </body>
 </html>
