@@ -17,7 +17,13 @@
       });
     const src = script?.src || '';
     if(src){
-      return src.replace(/inat-widget-custom\.js(?:\?.*)?$/, 'inat-widget-custom.css');
+      const match = src.match(/^(.*\/)inat-widget-custom\.js(\?.*)?$/);
+      if(match){
+        const base = match[1] || '';
+        const query = match[2] || '';
+        return `${base}inat-widget-custom.css${query}`;
+      }
+      return src.replace(/inat-widget-custom\.js$/, 'inat-widget-custom.css');
     }
     return 'inat-widget/inat-widget-custom.css';
   }
