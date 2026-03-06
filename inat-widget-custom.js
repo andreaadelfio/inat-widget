@@ -371,8 +371,13 @@
 
       const userImg = document.createElement('img');
       userImg.className = 'inat-w-usericon';
-      userImg.src = this.getHeaderUserIcon();
       userImg.alt = userLabel;
+      const headerUserIcon = this.getHeaderUserIcon();
+      if(headerUserIcon){
+        userImg.src = headerUserIcon;
+      }else{
+        userImg.hidden = true;
+      }
       this.userImgEl = userImg;
       userLink.appendChild(userImg);
       header.appendChild(userLink);
@@ -450,8 +455,7 @@
     }
 
     getHeaderUserIcon(){
-      if(this.userIcon) return this.userIcon;
-      return this.getFallbackUserIcon();
+      return this.normalizeExternalUrl(this.userIcon);
     }
 
     normalizeExternalUrl(value){
@@ -485,6 +489,7 @@
       this.userIcon = iconFromData;
       if(this.userImgEl){
         this.userImgEl.src = iconFromData;
+        this.userImgEl.hidden = false;
       }
     }
 
@@ -500,15 +505,11 @@
         this.userIcon = icon;
         if(this.userImgEl){
           this.userImgEl.src = icon;
+          this.userImgEl.hidden = false;
         }
       }catch(error){
         console.warn('Could not resolve iNaturalist user icon:', error);
       }
-    }
-
-    getFallbackUserIcon(){
-      const svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='10' fill='%23dbe3ea'/><text x='32' y='38' text-anchor='middle' font-family='Arial,sans-serif' font-size='20' fill='%235b6775'>iN</text></svg>";
-      return `data:image/svg+xml;utf8,${svg}`;
     }
 
     normalizeObservationSource(value){
