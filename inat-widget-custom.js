@@ -161,6 +161,33 @@
         auto: 0
       };
 
+      const minTileAdjustmentBySize = {
+        'extra-small': -20,
+        square: 0,
+        small: 0,
+        medium: 0,
+        large: 0,
+        auto: 0
+      };
+
+      const gapAdjustmentBySize = {
+        'extra-small': -2,
+        square: 0,
+        small: 0,
+        medium: 0,
+        large: 0,
+        auto: 0
+      };
+
+      const maxColsBySize = {
+        'extra-small': 10,
+        square: 8,
+        small: 8,
+        medium: 8,
+        large: 8,
+        auto: 8
+      };
+
       const minTileByWidth = (
         width <= 420 ? 44 :
         width <= 560 ? 52 :
@@ -177,11 +204,16 @@
         6
       );
 
-      const targetCols = Math.max(2, Math.min(8, baseColsByWidth + (colAdjustmentBySize[size] || 0)));
+      const minTile = Math.max(30, minTileByWidth + (minTileAdjustmentBySize[size] || 0));
+      const gap = Math.max(2, gapByWidth + (gapAdjustmentBySize[size] || 0));
+      const targetCols = Math.max(
+        2,
+        Math.min(maxColsBySize[size] || 8, baseColsByWidth + (colAdjustmentBySize[size] || 0))
+      );
 
       return {
-        gap: gapByWidth,
-        minTile: minTileByWidth,
+        gap,
+        minTile,
         targetCols
       };
     }
@@ -513,8 +545,9 @@
         ? window.devicePixelRatio
         : 1;
 
+      // Requested asset quality from iNaturalist API; it does not set tile size on screen.
       const standardMap = {
-        'extra-small': 'small',
+        'extra-small': 'square',
         square: 'small',
         small: 'medium',
         medium: 'large',
@@ -523,7 +556,7 @@
       };
 
       const hiDpiMap = {
-        'extra-small': 'medium',
+        'extra-small': 'small',
         square: 'medium',
         small: 'large',
         medium: 'large',
