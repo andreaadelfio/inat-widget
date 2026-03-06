@@ -214,6 +214,7 @@
       userImg.className = 'inat-w-usericon';
       userImg.src = this.getHeaderUserIcon();
       userImg.alt = userLabel;
+      this.userImgEl = userImg;
       userLink.appendChild(userImg);
       header.appendChild(userLink);
 
@@ -294,6 +295,58 @@
       return this.getFallbackUserIcon();
     }
 
+    normalizeExternalUrl(value){
+      const raw = String(value || '').trim();
+      if(!raw) return '';
+      if(raw.startsWith('//')) return `https:${raw}`;
+      if(raw.startsWith('/')) return `https://www.inaturalist.org${raw}`;
+      if(/^https?:\/\//i.test(raw)) return raw.replace(/^http:\/\//i, 'https://');
+      return raw;
+    }
+
+    getObservationUserIcon(obs){
+      const candidates = [
+        obs?.user?.icon_url,
+        obs?.user?.icon,
+        obs?.user?.user_icon_url
+      ];
+      for(const candidate of candidates){
+        const normalized = this.normalizeExternalUrl(candidate);
+        if(normalized) return normalized;
+      }
+      return '';
+    }
+
+    applyResolvedUserIcon(){
+      if(this.userIcon) return;
+      const iconFromData = this.observations
+        .map((obs) => this.getObservationUserIcon(obs))
+        .find(Boolean);
+      if(!iconFromData) return;
+      this.userIcon = iconFromData;
+      if(this.userImgEl){
+        this.userImgEl.src = iconFromData;
+      }
+    }
+
+    async fetchUserIconFromApi(){
+      if(this.userIcon || this.sourceType !== 'user' || !this.source) return;
+      try{
+        const response = await fetch(`${INAT_API}/users/${encodeURIComponent(this.source)}`);
+        if(!response.ok) return;
+        const data = await response.json();
+        const user = Array.isArray(data?.results) ? data.results[0] : null;
+        const icon = this.normalizeExternalUrl(user?.icon_url || user?.icon || user?.user_icon_url);
+        if(!icon) return;
+        this.userIcon = icon;
+        if(this.userImgEl){
+          this.userImgEl.src = icon;
+        }
+      }catch(error){
+        console.warn('Could not resolve iNaturalist user icon:', error);
+      }
+    }
+
     getFallbackUserIcon(){
       const svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='10' fill='%23dbe3ea'/><text x='32' y='38' text-anchor='middle' font-family='Arial,sans-serif' font-size='20' fill='%235b6775'>iN</text></svg>";
       return `data:image/svg+xml;utf8,${svg}`;
@@ -349,6 +402,8 @@
           return;
         }
 
+        this.applyResolvedUserIcon();
+        await this.fetchUserIconFromApi();
         this.renderGrid();
       }catch(error){
         console.error('iNaturalist widget load error:', error);
