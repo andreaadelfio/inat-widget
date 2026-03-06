@@ -372,13 +372,16 @@
       const userImg = document.createElement('img');
       userImg.className = 'inat-w-usericon';
       userImg.alt = userLabel;
-      const headerUserIcon = this.getHeaderUserIcon();
-      if(headerUserIcon){
-        userImg.src = headerUserIcon;
-      }else{
+      userImg.hidden = true;
+      userImg.addEventListener('load', () => {
+        userImg.hidden = false;
+      });
+      userImg.addEventListener('error', () => {
         userImg.hidden = true;
-      }
+        userImg.removeAttribute('src');
+      });
       this.userImgEl = userImg;
+      this.setHeaderUserIcon(this.getHeaderUserIcon());
       userLink.appendChild(userImg);
       header.appendChild(userLink);
 
@@ -458,6 +461,18 @@
       return this.normalizeExternalUrl(this.userIcon);
     }
 
+    setHeaderUserIcon(iconUrl){
+      if(!this.userImgEl) return;
+      const icon = this.normalizeExternalUrl(iconUrl);
+      if(!icon){
+        this.userImgEl.hidden = true;
+        this.userImgEl.removeAttribute('src');
+        return;
+      }
+      this.userImgEl.hidden = true;
+      this.userImgEl.src = icon;
+    }
+
     normalizeExternalUrl(value){
       const raw = String(value || '').trim();
       if(!raw) return '';
@@ -488,8 +503,7 @@
       if(!iconFromData) return;
       this.userIcon = iconFromData;
       if(this.userImgEl){
-        this.userImgEl.src = iconFromData;
-        this.userImgEl.hidden = false;
+        this.setHeaderUserIcon(iconFromData);
       }
     }
 
@@ -504,8 +518,7 @@
         if(!icon) return;
         this.userIcon = icon;
         if(this.userImgEl){
-          this.userImgEl.src = icon;
-          this.userImgEl.hidden = false;
+          this.setHeaderUserIcon(icon);
         }
       }catch(error){
         console.warn('Could not resolve iNaturalist user icon:', error);
