@@ -104,7 +104,9 @@
     }
 
     readPhotoSize(){
-      const raw = this.readString('inatPhotoSize').toLowerCase().replace(/\s+/g, '-');
+      const raw = (this.readString('inatTileSize') || this.readString('inatPhotoSize'))
+        .toLowerCase()
+        .replace(/\s+/g, '-');
       const aliases = {
         a: 'a',
         auto: 'a',
@@ -536,8 +538,7 @@
       const gridWidth = this.contentEl?.clientWidth
         || this.container.clientWidth
         || (typeof window !== 'undefined' ? window.innerWidth : 0);
-      const photoSize = this.getLayoutPhotoSize(gridWidth);
-      const photoAssetSize = this.getPhotoAssetSize(photoSize);
+      const photoAssetSize = this.getPhotoAssetSize();
 
       this.observations.forEach((obs) => {
         const item = document.createElement('a');
@@ -609,31 +610,9 @@
       return obs?.taxon?.name || '';
     }
 
-    getPhotoAssetSize(layoutSize){
-      const size = String(layoutSize || '').toLowerCase();
-      const dpr = (typeof window !== 'undefined' && Number.isFinite(window.devicePixelRatio))
-        ? window.devicePixelRatio
-        : 1;
-
-      // Requested asset quality from iNaturalist API; it does not set tile size on screen.
-      const standardMap = {
-        xs: 'square',
-        s: 'medium',
-        m: 'large',
-        l: 'large',
-        a: 'medium'
-      };
-
-      const hiDpiMap = {
-        xs: 'small',
-        s: 'large',
-        m: 'large',
-        l: 'large',
-        a: 'large'
-      };
-
-      const map = dpr >= 1.5 ? hiDpiMap : standardMap;
-      return map[size] || 'medium';
+    getPhotoAssetSize(){
+      // Tile size is controlled by grid metrics. Keep image assets at high quality.
+      return 'large';
     }
 
     getPhotoUrl(obs, size){
