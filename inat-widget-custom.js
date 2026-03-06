@@ -49,7 +49,7 @@
       this.source = this.readString('inatSource');
       this.sourceType = this.readEnum('inatSourceType', ['user', 'project', 'place', 'taxon', 'observation'], 'user');
       this.theme = this.readEnum('inatTheme', ['light', 'dark', 'transparent-light', 'transparent-dark'], 'light');
-      this.photoSize = this.readEnum('inatPhotoSize', ['auto', 'square', 'small', 'medium', 'large'], 'auto');
+      this.photoSize = this.readPhotoSize();
 
       this.limit = this.readInt('inatLimit', 10, 1, 50);
       this.orderBy = this.readString('inatOrderBy') || 'observed_on';
@@ -97,6 +97,18 @@
       return values.includes(value) ? value : fallback;
     }
 
+    readPhotoSize(){
+      const raw = this.readString('inatPhotoSize').toLowerCase().replace(/\s+/g, '-');
+      const aliases = {
+        xs: 'extra-small',
+        xsmall: 'extra-small',
+        extrasmall: 'extra-small'
+      };
+      const normalized = aliases[raw] || raw;
+      const allowed = ['auto', 'extra-small', 'square', 'small', 'medium', 'large'];
+      return allowed.includes(normalized) ? normalized : 'auto';
+    }
+
     bindViewportHandlers(){
       if(typeof window === 'undefined' || typeof window.addEventListener !== 'function'){
         return;
@@ -141,6 +153,7 @@
       );
 
       const colAdjustmentBySize = {
+        'extra-small': 2,
         square: 1,
         small: 0,
         medium: 0,
@@ -501,6 +514,7 @@
         : 1;
 
       const standardMap = {
+        'extra-small': 'small',
         square: 'small',
         small: 'medium',
         medium: 'large',
@@ -509,6 +523,7 @@
       };
 
       const hiDpiMap = {
+        'extra-small': 'medium',
         square: 'medium',
         small: 'large',
         medium: 'large',
