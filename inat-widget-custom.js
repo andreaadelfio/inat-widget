@@ -50,6 +50,12 @@
       this.sourceType = this.readEnum('inatSourceType', ['user', 'project', 'place', 'taxon', 'observation'], 'user');
       this.theme = this.readEnum('inatTheme', ['light', 'dark', 'transparent-light', 'transparent-dark'], 'light');
       this.photoSize = this.readPhotoSize();
+      const colsSetting = this.readGridSetting('inatCols', 'inatColsMode', 4, 1, 24);
+      this.colsMode = colsSetting.mode;
+      this.cols = colsSetting.count;
+      const rowsSetting = this.readGridSetting('inatRows', 'inatRowsMode', 2, 1, 24);
+      this.rowsMode = rowsSetting.mode;
+      this.rows = rowsSetting.count;
 
       this.limit = this.readInt('inatLimit', 10, 1, 50);
       this.orderBy = this.readString('inatOrderBy') || 'observed_on';
@@ -100,13 +106,57 @@
     readPhotoSize(){
       const raw = this.readString('inatPhotoSize').toLowerCase().replace(/\s+/g, '-');
       const aliases = {
-        xs: 'extra-small',
-        xsmall: 'extra-small',
-        extrasmall: 'extra-small'
+        a: 'a',
+        auto: 'a',
+        xs: 'xs',
+        xsmall: 'xs',
+        extrasmall: 'xs',
+        'extra-small': 'xs',
+        square: 'xs',
+        s: 's',
+        small: 's',
+        m: 'm',
+        medium: 'm',
+        l: 'l',
+        large: 'l'
       };
       const normalized = aliases[raw] || raw;
-      const allowed = ['auto', 'extra-small', 'square', 'small', 'medium', 'large'];
-      return allowed.includes(normalized) ? normalized : 'auto';
+      const allowed = ['a', 'xs', 's', 'm', 'l'];
+      return allowed.includes(normalized) ? normalized : 'a';
+    }
+
+    readGridSetting(valueKey, modeKey, fallbackCount, min, max){
+      const rawValue = this.readString(valueKey).toLowerCase();
+      const rawMode = this.readString(modeKey).toLowerCase();
+
+      const parseCount = (value) => {
+        const numeric = Number(value);
+        if(!Number.isFinite(numeric) || numeric <= 0) return null;
+        return Math.min(max, Math.max(min, Math.floor(numeric)));
+      };
+
+      if(rawMode === 'auto'){
+        return {mode: 'auto', count: null};
+      }
+
+      if(rawMode === 'fixed'){
+        return {mode: 'fixed', count: parseCount(rawValue) || fallbackCount};
+      }
+
+      if(!rawValue || rawValue === 'auto'){
+        return {mode: 'auto', count: null};
+      }
+
+      if(rawValue === 'fixed'){
+        return {mode: 'fixed', count: fallbackCount};
+      }
+
+      const parsed = parseCount(rawValue);
+      if(parsed != null){
+        return {mode: 'fixed', count: parsed};
+      }
+
+      return {mode: 'auto', count: null};
     }
 
     bindViewportHandlers(){
@@ -130,14 +180,14 @@
     }
 
     getLayoutPhotoSize(width){
-      if(this.photoSize !== 'auto'){
+      if(this.photoSize !== 'a'){
         return this.photoSize;
       }
 
-      if(width <= 420) return 'square';
-      if(width <= 760) return 'small';
-      if(width <= 1200) return 'medium';
-      return 'large';
+      if(width <= 420) return 'xs';
+      if(width <= 760) return 's';
+      if(width <= 1200) return 'm';
+      return 'l';
     }
 
     getGridMetrics(width){
@@ -153,39 +203,35 @@
       );
 
       const colAdjustmentBySize = {
-        'extra-small': 2,
-        square: 1,
-        small: 0,
-        medium: 0,
-        large: -1,
-        auto: 0
+        xs: 2,
+        s: 0,
+        m: 0,
+        l: -1,
+        a: 0
       };
 
       const minTileAdjustmentBySize = {
-        'extra-small': -20,
-        square: 0,
-        small: 0,
-        medium: 0,
-        large: 0,
-        auto: 0
+        xs: -20,
+        s: 0,
+        m: 0,
+        l: 0,
+        a: 0
       };
 
       const gapAdjustmentBySize = {
-        'extra-small': -2,
-        square: 0,
-        small: 0,
-        medium: 0,
-        large: 0,
-        auto: 0
+        xs: -2,
+        s: 0,
+        m: 0,
+        l: 0,
+        a: 0
       };
 
       const maxColsBySize = {
-        'extra-small': 10,
-        square: 8,
-        small: 8,
-        medium: 8,
-        large: 8,
-        auto: 8
+        xs: 10,
+        s: 8,
+        m: 8,
+        l: 8,
+        a: 8
       };
 
       const minTileByWidth = (
@@ -206,15 +252,18 @@
 
       const minTile = Math.max(30, minTileByWidth + (minTileAdjustmentBySize[size] || 0));
       const gap = Math.max(2, gapByWidth + (gapAdjustmentBySize[size] || 0));
-      const targetCols = Math.max(
-        2,
-        Math.min(maxColsBySize[size] || 8, baseColsByWidth + (colAdjustmentBySize[size] || 0))
-      );
+      const targetCols = this.colsMode === 'fixed'
+        ? Math.max(1, this.cols || 1)
+        : Math.max(
+          2,
+          Math.min(maxColsBySize[size] || 8, baseColsByWidth + (colAdjustmentBySize[size] || 0))
+        );
 
       return {
         gap,
         minTile,
-        targetCols
+        targetCols,
+        fixedCols: this.colsMode === 'fixed'
       };
     }
 
@@ -228,11 +277,31 @@
       if(itemCount <= 0) return;
 
       const metrics = this.getGridMetrics(width);
-      const maxColsByMinTile = Math.max(1, Math.floor((width + metrics.gap) / (metrics.minTile + metrics.gap)));
-      const cols = Math.max(1, Math.min(itemCount, Math.min(metrics.targetCols, maxColsByMinTile)));
+      let cols;
+      if(metrics.fixedCols){
+        cols = Math.max(1, Math.min(itemCount, metrics.targetCols));
+      }else{
+        const maxColsByMinTile = Math.max(1, Math.floor((width + metrics.gap) / (metrics.minTile + metrics.gap)));
+        cols = Math.max(1, Math.min(itemCount, Math.min(metrics.targetCols, maxColsByMinTile)));
+      }
 
       this.gridEl.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
       this.gridEl.style.gap = `${metrics.gap}px`;
+      this.applyRowVisibility(cols);
+    }
+
+    applyRowVisibility(cols){
+      if(!this.gridItemEls?.length) return;
+      if(this.rowsMode !== 'fixed'){
+        this.gridItemEls.forEach((item) => {
+          item.hidden = false;
+        });
+        return;
+      }
+      const visibleCount = Math.max(1, (this.rows || 1) * Math.max(1, cols));
+      this.gridItemEls.forEach((item, index) => {
+        item.hidden = index >= visibleCount;
+      });
     }
 
     renderShell(){
@@ -516,6 +585,7 @@
       this.contentEl.innerHTML = '';
       this.contentEl.appendChild(wrap);
       this.gridEl = wrap;
+      this.gridItemEls = Array.from(wrap.children);
       this.applyGridMetrics();
       if(typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function'){
         window.requestAnimationFrame(() => this.applyGridMetrics());
@@ -547,21 +617,19 @@
 
       // Requested asset quality from iNaturalist API; it does not set tile size on screen.
       const standardMap = {
-        'extra-small': 'square',
-        square: 'small',
-        small: 'medium',
-        medium: 'large',
-        large: 'large',
-        auto: 'medium'
+        xs: 'square',
+        s: 'medium',
+        m: 'large',
+        l: 'large',
+        a: 'medium'
       };
 
       const hiDpiMap = {
-        'extra-small': 'small',
-        square: 'medium',
-        small: 'large',
-        medium: 'large',
-        large: 'large',
-        auto: 'large'
+        xs: 'small',
+        s: 'large',
+        m: 'large',
+        l: 'large',
+        a: 'large'
       };
 
       const map = dpr >= 1.5 ? hiDpiMap : standardMap;

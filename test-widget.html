@@ -158,17 +158,39 @@
           <div class="row">
             <label for="photoSize">Photo Size</label>
             <select id="photoSize" name="photoSize">
-              <option value="auto" selected>auto</option>
-              <option value="extra-small">extra-small</option>
-              <option value="square">square</option>
-              <option value="small">small</option>
-              <option value="medium">medium</option>
-              <option value="large">large</option>
+              <option value="a" selected>a (auto)</option>
+              <option value="xs">xs</option>
+              <option value="s">s</option>
+              <option value="m">m</option>
+              <option value="l">l</option>
             </select>
           </div>
           <div class="row">
             <label for="limit">Limit</label>
             <input id="limit" name="limit" type="number" min="1" max="50" value="10">
+          </div>
+        </div>
+
+        <div class="row-2">
+          <div class="row">
+            <label for="colsMode">Columns</label>
+            <div class="row-2">
+              <select id="colsMode" name="colsMode">
+                <option value="auto" selected>auto</option>
+                <option value="fixed">fixed</option>
+              </select>
+              <input id="cols" name="cols" type="number" min="1" max="24" value="4">
+            </div>
+          </div>
+          <div class="row">
+            <label for="rowsMode">Rows</label>
+            <div class="row-2">
+              <select id="rowsMode" name="rowsMode">
+                <option value="auto" selected>auto</option>
+                <option value="fixed">fixed</option>
+              </select>
+              <input id="rows" name="rows" type="number" min="1" max="24" value="2">
+            </div>
           </div>
         </div>
 
@@ -255,7 +277,11 @@
       const defaults = {
         source: 'andreaadelfio',
         sourceType: 'user',
-        photoSize: 'auto',
+        photoSize: 'a',
+        colsMode: 'auto',
+        cols: '4',
+        rowsMode: 'auto',
+        rows: '2',
         limit: '10',
         theme: 'light',
         title: 'View my observations on',
@@ -286,6 +312,10 @@
         form.source.value = values.source;
         form.sourceType.value = values.sourceType;
         form.photoSize.value = values.photoSize;
+        form.colsMode.value = values.colsMode;
+        form.cols.value = values.cols;
+        form.rowsMode.value = values.rowsMode;
+        form.rows.value = values.rows;
         form.limit.value = values.limit;
         form.theme.value = values.theme;
         form.title.value = values.title;
@@ -301,6 +331,10 @@
           source: form.source.value.trim(),
           sourceType: form.sourceType.value.trim(),
           photoSize: form.photoSize.value.trim(),
+          colsMode: form.colsMode.value.trim(),
+          cols: form.cols.value.trim(),
+          rowsMode: form.rowsMode.value.trim(),
+          rows: form.rows.value.trim(),
           limit: form.limit.value.trim(),
           theme: form.theme.value.trim(),
           title: form.title.value.trim(),
@@ -319,6 +353,10 @@
           `  data-inat-source="${escapeAttr(opts.source)}"`,
           `  data-inat-source-type="${escapeAttr(opts.sourceType)}"`,
           `  data-inat-photo-size="${escapeAttr(opts.photoSize)}"`,
+          `  data-inat-cols-mode="${escapeAttr(opts.colsMode)}"`,
+          `  data-inat-cols="${escapeAttr(opts.cols)}"`,
+          `  data-inat-rows-mode="${escapeAttr(opts.rowsMode)}"`,
+          `  data-inat-rows="${escapeAttr(opts.rows)}"`,
           `  data-inat-limit="${escapeAttr(opts.limit)}"`,
           `  data-inat-theme="${escapeAttr(opts.theme)}"`,
           `  data-inat-title="${escapeAttr(opts.title)}"`,
@@ -363,6 +401,11 @@
         snippet.textContent = buildWidgetHtml(opts);
       }
 
+      function updateGridControlsState(){
+        form.cols.disabled = form.colsMode.value !== 'fixed';
+        form.rows.disabled = form.rowsMode.value !== 'fixed';
+      }
+
       form.addEventListener('submit', (event) => {
         event.preventDefault();
         render();
@@ -370,8 +413,12 @@
 
       resetButton.addEventListener('click', () => {
         setForm(defaults);
+        updateGridControlsState();
         render();
       });
+
+      form.colsMode.addEventListener('change', updateGridControlsState);
+      form.rowsMode.addEventListener('change', updateGridControlsState);
 
       widthRange.addEventListener('input', () => {
         setPreviewWidth(widthRange.value);
@@ -384,6 +431,7 @@
       });
 
       setForm(defaults);
+      updateGridControlsState();
       setPreviewWidth(1200);
       render();
     })();
