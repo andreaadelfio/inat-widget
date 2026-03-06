@@ -83,6 +83,7 @@
       this.visibleSlots = this.getInitialVisibleSlots();
       this.isLoadingMore = false;
       this.observationItemEls = [];
+      this.previewPhotoSize = '';
       this.loadMoreButtonEl = null;
 
       ensureStylesheet();
@@ -287,6 +288,18 @@
       };
     }
 
+    computeColumnsAndGap(width, itemCount){
+      const metrics = this.getGridMetrics(width);
+      let cols;
+      if(metrics.fixedCols){
+        cols = Math.max(1, Math.min(itemCount, metrics.targetCols));
+      }else{
+        const maxColsByMinTile = Math.max(1, Math.floor((width + metrics.gap) / (metrics.minTile + metrics.gap)));
+        cols = Math.max(1, Math.min(itemCount, Math.min(metrics.targetCols, maxColsByMinTile)));
+      }
+      return {cols, gap: metrics.gap};
+    }
+
     applyGridMetrics(){
       if(!this.gridEl) return;
 
@@ -298,18 +311,10 @@
         .length;
       if(itemCount <= 0) return;
 
-      const metrics = this.getGridMetrics(width);
-      let cols;
-      if(metrics.fixedCols){
-        cols = Math.max(1, Math.min(itemCount, metrics.targetCols));
-      }else{
-        const maxColsByMinTile = Math.max(1, Math.floor((width + metrics.gap) / (metrics.minTile + metrics.gap)));
-        cols = Math.max(1, Math.min(itemCount, Math.min(metrics.targetCols, maxColsByMinTile)));
-      }
-
+      const {cols, gap} = this.computeColumnsAndGap(width, itemCount);
       this.currentCols = cols;
       this.gridEl.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
-      this.gridEl.style.gap = `${metrics.gap}px`;
+      this.gridEl.style.gap = `${gap}px`;
     }
 
     getRowIncrement(){
@@ -625,6 +630,7 @@
       const photoAssetSize = this.getPhotoAssetSize();
       const visibleObservationCount = this.getVisibleObservationCount();
       const showLoadMoreTile = this.shouldShowLoadMoreTile(visibleObservationCount);
+      const hasPhotoAssetSizeChanged = photoAssetSize !== this.previewPhotoSize;
 
       if(!this.gridEl){
         const wrap = document.createElement('div');
@@ -635,6 +641,10 @@
       }
 
       this.ensureObservationTiles(visibleObservationCount, photoAssetSize);
+      if(hasPhotoAssetSizeChanged){
+        this.updateObservationTileImages(photoAssetSize);
+        this.previewPhotoSize = photoAssetSize;
+      }
       this.syncObservationTileVisibility(visibleObservationCount);
       this.syncLoadMoreTileVisibility(showLoadMoreTile);
       this.syncLoadMoreTileState();
@@ -658,6 +668,20 @@
           this.gridEl.appendChild(item);
         }
       }
+    }
+
+    updateObservationTileImages(photoAssetSize){
+      this.observationItemEls.forEach((item, index) => {
+        const obs = this.observations[index];
+        if(!obs) return;
+        const image = item.querySelector('.inat-w-grid-img');
+        if(!image) return;
+        if(image.dataset.inatSize === photoAssetSize) return;
+        const nextPhoto = this.getPhotoUrl(obs, photoAssetSize);
+        if(!nextPhoto) return;
+        image.src = nextPhoto;
+        image.dataset.inatSize = photoAssetSize;
+      });
     }
 
     syncObservationTileVisibility(visibleObservationCount){
@@ -693,7 +717,7 @@
     createObservationTile(obs, photoAssetSize){
       const item = document.createElement('a');
       item.className = 'inat-w-grid-item';
-      item.href = this.getObservationUrl(obs);
+      item.href = this.getPhotoUrl(obs, 'large') || this.getObservationUrl(obs);
       item.target = '_blank';
       item.rel = 'noopener noreferrer';
 
@@ -704,6 +728,8 @@
         image.src = photo;
         image.alt = this.getCommonName(obs);
         image.loading = 'lazy';
+        image.decoding = 'async';
+        image.dataset.inatSize = photoAssetSize;
         item.appendChild(image);
       }else{
         const fallback = document.createElement('div');
@@ -769,7 +795,25 @@
     }
 
     getPhotoAssetSize(){
-      // Tile size is controlled by grid metrics. Keep image assets at high quality.
+      const width = this.getGridWidth();
+      if(width <= 0) return 'medium';
+
+      const visibleObservationCount = this.getVisibleObservationCount();
+      const itemCount = Math.max(
+        1,
+        visibleObservationCount + (this.shouldShowLoadMoreTile(visibleObservationCount) ? 1 : 0)
+      );
+      const {cols, gap} = this.computeColumnsAndGap(width, itemCount);
+      const tileWidth = Math.max(32, Math.floor((width - ((cols - 1) * gap)) / cols));
+      const dpr = (
+        typeof window !== 'undefined'
+        && Number.isFinite(window.devicePixelRatio)
+        && window.devicePixelRatio > 0
+      ) ? Math.min(2, window.devicePixelRatio) : 1;
+      const targetPixels = tileWidth * dpr;
+
+      if(targetPixels <= 150) return 'small';
+      if(targetPixels <= 280) return 'medium';
       return 'large';
     }
 
