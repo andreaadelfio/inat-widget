@@ -45,6 +45,16 @@
   text-decoration:none;
 }
 
+.inat-w a,
+.inat-w button{
+  -webkit-tap-highlight-color:rgba(6,182,212,0.18);
+  touch-action:manipulation;
+}
+
+.inat-w button{
+  font:inherit;
+}
+
 .inat-w-header{
   display:flex;
   align-items:center;
@@ -65,7 +75,10 @@
 .inat-w-logo-link{
   display:inline-flex;
   align-items:center;
+  justify-content:center;
   flex-shrink:0;
+  min-width:34px;
+  min-height:34px;
 }
 
 .inat-w-usericon{
@@ -109,6 +122,14 @@
 
 .inat-w-header-logo.is-wordmark{
   width:auto;
+}
+
+.inat-w-source-link:focus-visible,
+.inat-w-user-link:focus-visible,
+.inat-w-logo-link:focus-visible{
+  outline:2px solid var(--inat-link);
+  outline-offset:2px;
+  border-radius:8px;
 }
 
 .inat-theme-dark .inat-w-header-logo.is-wordmark,
@@ -371,6 +392,11 @@
   opacity:1;
 }
 
+a.inat-w-grid-item:focus-visible{
+  outline:none;
+  box-shadow:0 0 0 2px var(--inat-link) inset;
+}
+
 .inat-w-grid-name{
   font-size:12px;
   font-weight:700;
@@ -420,5 +446,18 @@
     overflow:hidden;
     text-overflow:ellipsis;
     max-width:none;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .inat-w-grid-img,
+  .inat-w-grid-overlay,
+  .inat-w-load-more{
+    transition:none;
+  }
+
+  .inat-w-spinner,
+  .inat-w-load-more.is-loading .inat-w-load-more-action::after{
+    animation:none;
   }
 }

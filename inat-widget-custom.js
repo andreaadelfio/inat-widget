@@ -994,6 +994,7 @@
       if(!this.loadMoreButtonEl) return;
       if(this.loadMoreActionEl){
         this.loadMoreActionEl.disabled = this.isLoadingMore;
+        this.loadMoreActionEl.setAttribute('aria-busy', this.isLoadingMore ? 'true' : 'false');
       }
       this.loadMoreButtonEl.classList.toggle('is-loading', this.isLoadingMore);
     }
@@ -1004,6 +1005,7 @@
       item.href = this.getObservationUrl(obs);
       item.target = '_blank';
       item.rel = 'noopener noreferrer';
+      item.setAttribute('aria-label', `${this.getCommonName(obs)} observation`);
       let imageEl = null;
 
       const photo = this.getPhotoUrl(obs, photoAssetSize);
@@ -1056,6 +1058,7 @@
       const plus = document.createElement('span');
       plus.className = 'inat-w-load-more-plus';
       plus.textContent = '+';
+      plus.setAttribute('aria-hidden', 'true');
       button.appendChild(plus);
 
       button.addEventListener('click', () => {
