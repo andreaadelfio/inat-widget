@@ -65,7 +65,7 @@
       this.orderBy = this.readString('inatOrderBy') || 'observed_on';
       this.order = this.readEnum('inatOrder', ['asc', 'desc'], 'desc');
 
-      this.title = this.readString('inatTitle') || 'View my observations on';
+      this.title = this.readString('inatTitle') || 'View my observations';
       this.userIcon = this.readString('inatUserIcon');
       this.showTitle = this.readBool('inatShowTitle', true);
       this.showStats = this.readBool('inatShowStats', false);
@@ -1018,8 +1018,10 @@
       }
 
       this.loadMoreTryEl.classList.remove('is-icon-only');
+      const tryWidth = this.loadMoreTryEl.clientWidth || 0;
+      const forceIconOnlyByWidth = tryWidth > 0 && tryWidth < 72;
       const textIsClipped = (this.loadMoreTryTextEl.scrollWidth - this.loadMoreTryTextEl.clientWidth) > 1;
-      this.loadMoreTryEl.classList.toggle('is-icon-only', textIsClipped);
+      this.loadMoreTryEl.classList.toggle('is-icon-only', forceIconOnlyByWidth || textIsClipped);
       this.updateLoadMoreControlIconSizing();
     }
 
@@ -1127,6 +1129,9 @@
       tryIcon.src = INAT_ICON_URL;
       tryIcon.alt = '';
       tryIcon.setAttribute('aria-hidden', 'true');
+      tryIcon.addEventListener('load', () => {
+        this.updateLoadMoreTryLayout();
+      });
       tryIcon.addEventListener('error', () => {
         this.loadMoreTryIconEl = null;
         tryIcon.remove();
