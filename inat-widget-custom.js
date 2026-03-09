@@ -11,6 +11,8 @@
   const STYLESHEET_ID = 'inat-widget-custom-stylesheet';
   const OBSERVATIONS_PAGE_SIZE = 30;
   const CACHE_NAMESPACE = 'inat-widget-custom:v1';
+  const INAT_ICON_URL = 'https://www.inaturalist.org/favicon.ico';
+  const INAT_WORDMARK_URL = 'https://static.inaturalist.org/sites/1-logo.svg';
 
   function resolveStylesheetHref(){
     const script = document.currentScript
@@ -91,6 +93,7 @@
       this.observationImageEls = [];
       this.previewPhotoSize = '';
       this.loadMoreButtonEl = null;
+      this.loadMoreActionEl = null;
       this.totalObservations = null;
       this.totalSpecies = null;
       this.statsEl = null;
@@ -516,8 +519,8 @@
       logoLink.setAttribute('aria-label', 'iNaturalist');
 
       const logo = document.createElement('img');
-      logo.className = 'inat-w-header-logo';
-      logo.src = 'https://static.inaturalist.org/sites/1-logo.svg';
+      logo.className = 'inat-w-header-logo is-wordmark';
+      logo.src = INAT_WORDMARK_URL;
       logo.alt = 'iNaturalist';
       logoLink.appendChild(logo);
       headerRight.appendChild(logoLink);
@@ -989,7 +992,9 @@
 
     syncLoadMoreTileState(){
       if(!this.loadMoreButtonEl) return;
-      this.loadMoreButtonEl.disabled = this.isLoadingMore;
+      if(this.loadMoreActionEl){
+        this.loadMoreActionEl.disabled = this.isLoadingMore;
+      }
       this.loadMoreButtonEl.classList.toggle('is-loading', this.isLoadingMore);
     }
 
@@ -1040,12 +1045,14 @@
     }
 
     createLoadMoreTile(){
+      const tile = document.createElement('div');
+      tile.className = 'inat-w-grid-item inat-w-load-more';
+
       const button = document.createElement('button');
       button.type = 'button';
-      button.className = 'inat-w-grid-item inat-w-load-more';
+      button.className = 'inat-w-load-more-action';
       button.setAttribute('aria-label', 'Load one more row of observations');
       button.title = 'Load one more row';
-
       const plus = document.createElement('span');
       plus.className = 'inat-w-load-more-plus';
       plus.textContent = '+';
@@ -1054,8 +1061,32 @@
       button.addEventListener('click', () => {
         this.handleLoadMoreClick();
       });
+      tile.appendChild(button);
 
-      return button;
+      const tryLink = document.createElement('a');
+      tryLink.className = 'inat-w-load-more-try';
+      tryLink.href = 'https://www.inaturalist.org';
+      tryLink.target = '_blank';
+      tryLink.rel = 'noopener noreferrer';
+      tryLink.setAttribute('aria-label', 'Try it out on iNaturalist');
+
+      const tryIcon = document.createElement('img');
+      tryIcon.className = 'inat-w-load-more-try-icon';
+      tryIcon.src = INAT_ICON_URL;
+      tryIcon.alt = '';
+      tryIcon.setAttribute('aria-hidden', 'true');
+      tryIcon.addEventListener('error', () => {
+        tryIcon.remove();
+      });
+      const tryText = document.createElement('span');
+      tryText.textContent = 'Try it out!';
+      tryLink.appendChild(tryText);
+      tryLink.appendChild(tryIcon);
+      tile.appendChild(tryLink);
+
+      this.loadMoreActionEl = button;
+
+      return tile;
     }
 
     getObservationUrl(obs){
