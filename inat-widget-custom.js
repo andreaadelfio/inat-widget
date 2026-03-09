@@ -1001,7 +1001,7 @@
     createObservationTile(obs, photoAssetSize){
       const item = document.createElement('a');
       item.className = 'inat-w-grid-item';
-      item.href = this.getPhotoUrl(obs, 'large') || this.getObservationUrl(obs);
+      item.href = this.getObservationUrl(obs);
       item.target = '_blank';
       item.rel = 'noopener noreferrer';
       let imageEl = null;
