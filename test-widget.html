@@ -235,10 +235,16 @@
           </div>
         </div>
 
-        <label class="check">
-          <input id="showTitle" name="showTitle" type="checkbox" checked>
-          show title
-        </label>
+        <div class="row-2">
+          <label class="check">
+            <input id="showTitle" name="showTitle" type="checkbox" checked>
+            show title
+          </label>
+          <label class="check">
+            <input id="showStats" name="showStats" type="checkbox">
+            show stats
+          </label>
+        </div>
 
         <div class="actions">
           <button class="primary" type="submit">Aggiorna</button>
@@ -289,7 +295,8 @@
         order: 'desc',
         radius: '14',
         padding: '14',
-        showTitle: true
+        showTitle: true,
+        showStats: false
       };
 
       const form = document.getElementById('controls');
@@ -324,6 +331,7 @@
         form.radius.value = values.radius;
         form.padding.value = values.padding;
         form.showTitle.checked = values.showTitle;
+        form.showStats.checked = values.showStats;
       }
 
       function getForm(){
@@ -342,7 +350,8 @@
           order: form.order.value.trim(),
           radius: form.radius.value.trim(),
           padding: form.padding.value.trim(),
-          showTitle: form.showTitle.checked
+          showTitle: form.showTitle.checked,
+          showStats: form.showStats.checked
         };
       }
 
@@ -366,6 +375,7 @@
           `  data-inat-radius="${escapeAttr(opts.radius)}"`,
           `  data-inat-padding="${escapeAttr(opts.padding)}"`,
           `  data-inat-show-title="${opts.showTitle}"`,
+          `  data-inat-show-stats="${opts.showStats}"`,
           '></div>'
         ].join('\n');
       }

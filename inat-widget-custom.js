@@ -65,6 +65,7 @@
       this.title = this.readString('inatTitle') || 'View my observations on';
       this.userIcon = this.readString('inatUserIcon');
       this.showTitle = this.readBool('inatShowTitle', true);
+      this.showStats = this.readBool('inatShowStats', false);
 
       this.padding = this.readInt('inatPadding', 14, 0, 50);
       this.borderRadius = this.readInt('inatRadius', 14, 0, 50);
@@ -85,6 +86,11 @@
       this.observationItemEls = [];
       this.previewPhotoSize = '';
       this.loadMoreButtonEl = null;
+      this.totalObservations = null;
+      this.totalSpecies = null;
+      this.statsEl = null;
+      this.headerEl = null;
+      this.headerLeftEl = null;
 
       ensureStylesheet();
       this.renderShell();
@@ -358,6 +364,10 @@
 
       const header = document.createElement('div');
       header.className = 'inat-w-header';
+      this.headerEl = header;
+      const headerLeft = document.createElement('div');
+      headerLeft.className = 'inat-w-header-left';
+      this.headerLeftEl = headerLeft;
 
       const sourceUrl = this.getHeaderSourceUrl();
       const userLabel = this.getHeaderUserLabel();
@@ -383,7 +393,7 @@
       this.userImgEl = userImg;
       this.setHeaderUserIcon(this.getHeaderUserIcon());
       userLink.appendChild(userImg);
-      header.appendChild(userLink);
+      headerLeft.appendChild(userLink);
 
       const headerRight = document.createElement('div');
       headerRight.className = 'inat-w-header-right';
@@ -412,6 +422,13 @@
       logoLink.appendChild(logo);
       headerRight.appendChild(logoLink);
 
+      if(this.showStats){
+        this.statsEl = document.createElement('div');
+        this.statsEl.className = 'inat-w-stats inat-w-stats-header';
+        headerLeft.appendChild(this.statsEl);
+      }
+
+      header.appendChild(headerLeft);
       header.appendChild(headerRight);
       this.container.appendChild(header);
 
@@ -560,12 +577,77 @@
       const response = await fetch(`${INAT_API}/observations?${params.toString()}`);
       if(!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
+      if(page === 1){
+        const totalResults = Number(data?.total_results);
+        if(Number.isFinite(totalResults) && totalResults >= 0){
+          this.totalObservations = totalResults;
+        }
+      }
       const results = Array.isArray(data?.results) ? data.results : [];
       if(results.length < this.pageSize){
         this.hasMoreObservations = false;
       }
       this.nextPage = page + 1;
       return results;
+    }
+
+    async fetchSpeciesCount(){
+      if(this.sourceType === 'observation'){
+        const hasTaxon = Boolean(this.observations?.[0]?.taxon?.id);
+        this.totalSpecies = hasTaxon ? 1 : 0;
+        return;
+      }
+
+      const params = this.buildObservationParams(1);
+      params.set('per_page', '1');
+      const response = await fetch(`${INAT_API}/observations/species_counts?${params.toString()}`);
+      if(!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      const totalResults = Number(data?.total_results);
+      this.totalSpecies = Number.isFinite(totalResults) && totalResults >= 0 ? totalResults : 0;
+    }
+
+    getLoadedSpeciesCount(){
+      const ids = new Set();
+      this.observations.forEach((obs) => {
+        const taxonId = obs?.taxon?.id;
+        if(taxonId != null && taxonId !== ''){
+          ids.add(String(taxonId));
+        }
+      });
+      return ids.size;
+    }
+
+    formatCount(value){
+      const safeValue = Number.isFinite(Number(value)) ? Math.max(0, Number(value)) : 0;
+      return new Intl.NumberFormat().format(safeValue);
+    }
+
+    renderStats(){
+      if(!this.showStats) return;
+      if(!this.statsEl){
+        this.statsEl = document.createElement('div');
+        this.statsEl.className = 'inat-w-stats inat-w-stats-header';
+        if(this.headerLeftEl){
+          this.headerLeftEl.appendChild(this.statsEl);
+        }else if(this.headerEl){
+          this.headerEl.appendChild(this.statsEl);
+        }
+      }
+
+      const observations = this.formatCount(this.totalObservations);
+      const species = this.formatCount(this.totalSpecies);
+
+      this.statsEl.innerHTML = `
+        <div class="inat-w-stats-card inat-w-stats-observations" aria-label="Total observations">
+          <span class="inat-w-stats-value">${this.escapeHtml(observations)}</span>
+          <span class="inat-w-stats-label">Observations</span>
+        </div>
+        <div class="inat-w-stats-card inat-w-stats-species" aria-label="Total species observed">
+          <span class="inat-w-stats-value">${this.escapeHtml(species)}</span>
+          <span class="inat-w-stats-label">Species</span>
+        </div>
+      `;
     }
 
     async ensureObservationsCount(minCount){
@@ -593,6 +675,7 @@
           if(!response.ok) throw new Error(`HTTP ${response.status}`);
           const data = await response.json();
           this.observations = Array.isArray(data?.results) ? data.results : [];
+          this.totalObservations = this.observations.length;
           this.hasMoreObservations = false;
         }else{
           this.observations = [];
@@ -606,8 +689,21 @@
           return;
         }
 
+        if(this.showStats){
+          if(!Number.isFinite(this.totalObservations)){
+            this.totalObservations = this.observations.length;
+          }
+          try{
+            await this.fetchSpeciesCount();
+          }catch(error){
+            console.warn('Could not load species count:', error);
+            this.totalSpecies = this.getLoadedSpeciesCount();
+          }
+        }
+
         this.applyResolvedUserIcon();
         await this.fetchUserIconFromApi();
+        this.renderStats();
         this.renderGrid();
       }catch(error){
         console.error('iNaturalist widget load error:', error);

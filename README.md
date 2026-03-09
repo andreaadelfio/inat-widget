@@ -46,12 +46,19 @@ Widget JavaScript/CSS standalone per mostrare osservazioni iNaturalist.
 | `data-inat-order` | `desc` | `asc`, `desc` |
 | `data-inat-title` | `View my observations on` | stringa |
 | `data-inat-show-title` | `true` | boolean |
+| `data-inat-show-stats` | `false` | boolean |
 | `data-inat-padding` | `14` | intero `0..50` |
 | `data-inat-radius` | `14` | intero `0..50` |
 
 Nota su `data-inat-photo-size`:
 - controlla la compattezza del layout (dimensione tile/colonne).
 - il widget scarica automaticamente una variante foto leggermente piu grande per mantenere nitidezza.
+
+Nota su `data-inat-show-stats`:
+- se impostato a `true`, mostra due box riepilogativi con:
+  - totale osservazioni
+  - totale specie osservate
+- i box vengono renderizzati nell'header del widget.
 
 ## Filtri opzionali
 
