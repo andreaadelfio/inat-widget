@@ -11,7 +11,6 @@
   const STYLESHEET_ID = 'inat-widget-custom-stylesheet';
   const OBSERVATIONS_PAGE_SIZE = 30;
   const CACHE_NAMESPACE = 'inat-widget-custom:v1';
-  const INAT_ICON_URL = 'https://www.inaturalist.org/favicon.ico';
   const INAT_WORDMARK_URL = 'https://static.inaturalist.org/sites/1-logo.svg';
 
   function resolveStylesheetHref(){
@@ -95,9 +94,6 @@
       this.loadMoreButtonEl = null;
       this.loadMoreActionEl = null;
       this.loadMorePlusEl = null;
-      this.loadMoreTryEl = null;
-      this.loadMoreTryTextEl = null;
-      this.loadMoreTryIconEl = null;
       this.totalObservations = null;
       this.totalSpecies = null;
       this.statsEl = null;
@@ -415,7 +411,7 @@
       this.currentCols = cols;
       this.gridEl.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
       this.gridEl.style.gap = `${gap}px`;
-      this.updateLoadMoreTryLayout();
+      this.updateLoadMoreControlIconSizing();
     }
 
     scheduleGridMetrics(){
@@ -993,7 +989,7 @@
         this.gridEl.appendChild(this.loadMoreButtonEl);
       }
       this.loadMoreButtonEl.hidden = false;
-      this.updateLoadMoreTryLayout();
+      this.updateLoadMoreControlIconSizing();
     }
 
     syncLoadMoreTileState(){
@@ -1006,25 +1002,6 @@
       this.updateLoadMoreControlIconSizing();
     }
 
-    updateLoadMoreTryLayout(){
-      if(!this.loadMoreTryEl || !this.loadMoreTryTextEl) return;
-
-      const iconEl = this.loadMoreTryEl.querySelector('.inat-w-load-more-try-icon');
-      this.loadMoreTryIconEl = iconEl || null;
-      if(!iconEl){
-        this.loadMoreTryEl.classList.remove('is-icon-only');
-        this.updateLoadMoreControlIconSizing();
-        return;
-      }
-
-      this.loadMoreTryEl.classList.remove('is-icon-only');
-      const tryWidth = this.loadMoreTryEl.clientWidth || 0;
-      const forceIconOnlyByWidth = tryWidth > 0 && tryWidth < 72;
-      const textIsClipped = (this.loadMoreTryTextEl.scrollWidth - this.loadMoreTryTextEl.clientWidth) > 1;
-      this.loadMoreTryEl.classList.toggle('is-icon-only', forceIconOnlyByWidth || textIsClipped);
-      this.updateLoadMoreControlIconSizing();
-    }
-
     updateLoadMoreControlIconSizing(){
       if(this.loadMoreActionEl && this.loadMorePlusEl){
         const actionSize = Math.min(
@@ -1034,18 +1011,6 @@
         if(actionSize > 0){
           const plusSize = Math.max(14, Math.min(52, Math.round(actionSize * 0.70)));
           this.loadMoreActionEl.style.setProperty('--inat-load-more-plus-size', `${plusSize}px`);
-        }
-      }
-
-      if(this.loadMoreTryEl && this.loadMoreTryIconEl){
-        const trySize = Math.min(
-          this.loadMoreTryEl.clientWidth || 0,
-          this.loadMoreTryEl.clientHeight || 0
-        );
-        if(trySize > 0){
-          const iconRatio = this.loadMoreTryEl.classList.contains('is-icon-only') ? 0.54 : 0.38;
-          const iconSize = Math.max(10, Math.min(36, Math.round(trySize * iconRatio)));
-          this.loadMoreTryEl.style.setProperty('--inat-load-more-try-icon-size', `${iconSize}px`);
         }
       }
     }
@@ -1117,37 +1082,8 @@
       });
       tile.appendChild(button);
 
-      const tryLink = document.createElement('a');
-      tryLink.className = 'inat-w-load-more-try';
-      tryLink.href = 'https://www.inaturalist.org';
-      tryLink.target = '_blank';
-      tryLink.rel = 'noopener noreferrer';
-      tryLink.setAttribute('aria-label', 'Try it out on iNaturalist');
-
-      const tryIcon = document.createElement('img');
-      tryIcon.className = 'inat-w-load-more-try-icon';
-      tryIcon.src = INAT_ICON_URL;
-      tryIcon.alt = '';
-      tryIcon.setAttribute('aria-hidden', 'true');
-      tryIcon.addEventListener('load', () => {
-        this.updateLoadMoreTryLayout();
-      });
-      tryIcon.addEventListener('error', () => {
-        this.loadMoreTryIconEl = null;
-        tryIcon.remove();
-        this.updateLoadMoreTryLayout();
-      });
-      const tryText = document.createElement('span');
-      tryText.textContent = 'Try it out!';
-      tryLink.appendChild(tryText);
-      tryLink.appendChild(tryIcon);
-      tile.appendChild(tryLink);
-
       this.loadMoreActionEl = button;
       this.loadMorePlusEl = plus;
-      this.loadMoreTryEl = tryLink;
-      this.loadMoreTryTextEl = tryText;
-      this.loadMoreTryIconEl = tryIcon;
 
       return tile;
     }
