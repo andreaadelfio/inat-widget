@@ -47,6 +47,7 @@ Widget JavaScript/CSS standalone per mostrare osservazioni iNaturalist.
 | `data-inat-title` | `View my observations on` | stringa |
 | `data-inat-show-title` | `true` | boolean |
 | `data-inat-show-stats` | `false` | boolean |
+| `data-inat-cache` | `true` | boolean |
 | `data-inat-padding` | `14` | intero `0..50` |
 | `data-inat-radius` | `14` | intero `0..50` |
 
@@ -59,6 +60,11 @@ Nota su `data-inat-show-stats`:
   - totale osservazioni
   - totale specie osservate
 - i box vengono renderizzati nell'header del widget.
+
+Nota su cache:
+- il widget usa `sessionStorage` per cache durante la sessione (tab aperta) di prima pagina osservazioni e totale specie.
+- di default la cache e attiva (`data-inat-cache="true"`).
+- puoi disattivarla con `data-inat-cache="false"`.
 
 ## Filtri opzionali
 

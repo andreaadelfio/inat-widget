@@ -246,6 +246,13 @@
           </label>
         </div>
 
+        <div class="row-2">
+          <label class="check">
+            <input id="useCache" name="useCache" type="checkbox" checked>
+            use cache
+          </label>
+        </div>
+
         <div class="actions">
           <button class="primary" type="submit">Aggiorna</button>
           <button id="reset" type="button">Reset</button>
@@ -296,7 +303,8 @@
         radius: '14',
         padding: '14',
         showTitle: true,
-        showStats: false
+        showStats: false,
+        useCache: true
       };
 
       const form = document.getElementById('controls');
@@ -332,6 +340,7 @@
         form.padding.value = values.padding;
         form.showTitle.checked = values.showTitle;
         form.showStats.checked = values.showStats;
+        form.useCache.checked = values.useCache;
       }
 
       function getForm(){
@@ -351,7 +360,8 @@
           radius: form.radius.value.trim(),
           padding: form.padding.value.trim(),
           showTitle: form.showTitle.checked,
-          showStats: form.showStats.checked
+          showStats: form.showStats.checked,
+          useCache: form.useCache.checked
         };
       }
 
@@ -376,6 +386,7 @@
           `  data-inat-padding="${escapeAttr(opts.padding)}"`,
           `  data-inat-show-title="${opts.showTitle}"`,
           `  data-inat-show-stats="${opts.showStats}"`,
+          `  data-inat-cache="${opts.useCache}"`,
           '></div>'
         ].join('\n');
       }

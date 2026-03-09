@@ -10,6 +10,7 @@
   const INAT_API = 'https://api.inaturalist.org/v1';
   const STYLESHEET_ID = 'inat-widget-custom-stylesheet';
   const OBSERVATIONS_PAGE_SIZE = 30;
+  const CACHE_NAMESPACE = 'inat-widget-custom:v1';
 
   function resolveStylesheetHref(){
     const script = document.currentScript
@@ -66,6 +67,7 @@
       this.userIcon = this.readString('inatUserIcon');
       this.showTitle = this.readBool('inatShowTitle', true);
       this.showStats = this.readBool('inatShowStats', false);
+      this.cacheEnabled = this.readBool('inatCache', true);
 
       this.padding = this.readInt('inatPadding', 14, 0, 50);
       this.borderRadius = this.readInt('inatRadius', 14, 0, 50);
@@ -91,6 +93,7 @@
       this.statsEl = null;
       this.headerEl = null;
       this.headerLeftEl = null;
+      this.gridMetricsRaf = null;
 
       ensureStylesheet();
       this.renderShell();
@@ -177,6 +180,49 @@
       return {mode: 'auto', count: null};
     }
 
+    getCacheStorage(){
+      if(!this.cacheEnabled) return null;
+      if(typeof window === 'undefined') return null;
+      try{
+        return window.sessionStorage;
+      }catch(error){
+        return null;
+      }
+    }
+
+    getCacheKey(section, identifier){
+      return `${CACHE_NAMESPACE}:${section}:${identifier}`;
+    }
+
+    readCache(key){
+      const storage = this.getCacheStorage();
+      if(!storage) return null;
+
+      try{
+        const raw = storage.getItem(key);
+        if(!raw) return null;
+
+        const parsed = JSON.parse(raw);
+        if(parsed && typeof parsed === 'object' && Object.prototype.hasOwnProperty.call(parsed, 'value')){
+          return parsed.value;
+        }
+        return parsed;
+      }catch(error){
+        return null;
+      }
+    }
+
+    writeCache(key, value){
+      const storage = this.getCacheStorage();
+      if(!storage) return;
+
+      try{
+        storage.setItem(key, JSON.stringify({value}));
+      }catch(error){
+        // Ignore quota/storage errors and continue without cache.
+      }
+    }
+
     getInitialVisibleSlots(){
       const minSlots = this.sourceType === 'observation' ? 1 : 2;
       const fallbackCols = this.colsMode === 'fixed' ? Math.max(1, this.cols || 1) : 4;
@@ -193,7 +239,7 @@
 
       this.onResize = () => {
         if(!this.gridEl || !this.observations.length) return;
-        this.applyGridMetrics();
+        this.scheduleGridMetrics();
       };
 
       window.addEventListener('resize', this.onResize);
@@ -321,6 +367,19 @@
       this.currentCols = cols;
       this.gridEl.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
       this.gridEl.style.gap = `${gap}px`;
+    }
+
+    scheduleGridMetrics(){
+      if(!this.gridEl) return;
+      if(typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function'){
+        this.applyGridMetrics();
+        return;
+      }
+      if(this.gridMetricsRaf != null) return;
+      this.gridMetricsRaf = window.requestAnimationFrame(() => {
+        this.gridMetricsRaf = null;
+        this.applyGridMetrics();
+      });
     }
 
     getRowIncrement(){
@@ -574,16 +633,39 @@
 
     async fetchObservationPage(page){
       const params = this.buildObservationParams(page);
+      const cacheKey = page === 1 ? this.getCacheKey('observations', params.toString()) : '';
+
+      if(page === 1){
+        const cached = this.readCache(cacheKey);
+        if(cached && Array.isArray(cached.results)){
+          const cachedTotal = Number(cached.totalResults);
+          if(Number.isFinite(cachedTotal) && cachedTotal >= 0){
+            this.totalObservations = cachedTotal;
+          }
+          if(cached.results.length < this.pageSize){
+            this.hasMoreObservations = false;
+          }
+          this.nextPage = page + 1;
+          return cached.results;
+        }
+      }
+
       const response = await fetch(`${INAT_API}/observations?${params.toString()}`);
       if(!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
+      const totalResults = Number(data?.total_results);
       if(page === 1){
-        const totalResults = Number(data?.total_results);
         if(Number.isFinite(totalResults) && totalResults >= 0){
           this.totalObservations = totalResults;
         }
       }
       const results = Array.isArray(data?.results) ? data.results : [];
+      if(page === 1){
+        this.writeCache(cacheKey, {
+          totalResults: Number.isFinite(totalResults) && totalResults >= 0 ? totalResults : null,
+          results
+        });
+      }
       if(results.length < this.pageSize){
         this.hasMoreObservations = false;
       }
@@ -600,11 +682,20 @@
 
       const params = this.buildObservationParams(1);
       params.set('per_page', '1');
+      const cacheKey = this.getCacheKey('species-count', params.toString());
+      const cachedValue = this.readCache(cacheKey);
+      const cachedTotal = Number(cachedValue);
+      if(cachedValue != null && Number.isFinite(cachedTotal) && cachedTotal >= 0){
+        this.totalSpecies = cachedTotal;
+        return;
+      }
+
       const response = await fetch(`${INAT_API}/observations/species_counts?${params.toString()}`);
       if(!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
       const totalResults = Number(data?.total_results);
       this.totalSpecies = Number.isFinite(totalResults) && totalResults >= 0 ? totalResults : 0;
+      this.writeCache(cacheKey, this.totalSpecies);
     }
 
     getLoadedSpeciesCount(){
@@ -671,10 +762,17 @@
       try{
         if(this.sourceType === 'observation'){
           const id = this.normalizeObservationSource(this.source);
-          const response = await fetch(`${INAT_API}/observations/${encodeURIComponent(id)}`);
-          if(!response.ok) throw new Error(`HTTP ${response.status}`);
-          const data = await response.json();
-          this.observations = Array.isArray(data?.results) ? data.results : [];
+          const cacheKey = this.getCacheKey('observation', String(id));
+          const cached = this.readCache(cacheKey);
+          if(cached && Array.isArray(cached.results)){
+            this.observations = cached.results;
+          }else{
+            const response = await fetch(`${INAT_API}/observations/${encodeURIComponent(id)}`);
+            if(!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            this.observations = Array.isArray(data?.results) ? data.results : [];
+            this.writeCache(cacheKey, {results: this.observations});
+          }
           this.totalObservations = this.observations.length;
           this.hasMoreObservations = false;
         }else{
@@ -689,20 +787,23 @@
           return;
         }
 
+        const asyncTasks = [];
+
         if(this.showStats){
           if(!Number.isFinite(this.totalObservations)){
             this.totalObservations = this.observations.length;
           }
-          try{
-            await this.fetchSpeciesCount();
-          }catch(error){
-            console.warn('Could not load species count:', error);
-            this.totalSpecies = this.getLoadedSpeciesCount();
-          }
+          asyncTasks.push(
+            this.fetchSpeciesCount().catch((error) => {
+              console.warn('Could not load species count:', error);
+              this.totalSpecies = this.getLoadedSpeciesCount();
+            })
+          );
         }
 
         this.applyResolvedUserIcon();
-        await this.fetchUserIconFromApi();
+        asyncTasks.push(this.fetchUserIconFromApi());
+        await Promise.allSettled(asyncTasks);
         this.renderStats();
         this.renderGrid();
       }catch(error){
@@ -759,10 +860,7 @@
       this.syncLoadMoreTileVisibility(showLoadMoreTile);
       this.syncLoadMoreTileState();
       this.gridItemEls = Array.from(this.gridEl.children);
-      this.applyGridMetrics();
-      if(typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function'){
-        window.requestAnimationFrame(() => this.applyGridMetrics());
-      }
+      this.scheduleGridMetrics();
     }
 
     ensureObservationTiles(targetCount, photoAssetSize){
