@@ -5,6 +5,7 @@
   --inat-border:#dbe3ea;
   --inat-link:#06b6d4;
   --inat-accent:#74ac00;
+  --inat-header-chip-size:35px;
   --inat-radius:14px;
   --inat-radius-sm:11px;
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
@@ -66,9 +67,11 @@
 .inat-w-header-left{
   display:flex;
   align-items:center;
-  gap:8px;
+  gap:0;
   min-width:0;
   flex:0 1 auto;
+  border-radius:var(--inat-radius-sm);
+  overflow:hidden;
 }
 
 .inat-w-user-link,
@@ -82,13 +85,18 @@
 }
 
 .inat-w-usericon{
-  width:34px;
-  height:34px;
-  border-radius:8px;
+  width:var(--inat-header-chip-size);
+  height:var(--inat-header-chip-size);
+  border-radius:0;
   object-fit:cover;
   display:block;
   background:var(--inat-border);
-  border:1px solid rgba(0,0,0,0.08);
+  border:0;
+}
+
+.inat-w-user-link{
+  min-width:var(--inat-header-chip-size);
+  min-height:var(--inat-header-chip-size);
 }
 
 .inat-w-usericon[hidden]{
@@ -194,7 +202,7 @@
   display:inline-flex;
   align-items:stretch;
   gap:0;
-  border-radius:var(--inat-radius-sm);
+  border-radius:0;
   overflow:hidden;
   width:fit-content;
   margin-top:0;
@@ -208,7 +216,7 @@
   align-items:flex-start;
   justify-content:center;
   flex:0 0 auto;
-  height:35px;
+  height:var(--inat-header-chip-size);
   padding:5px 8px;
 }
 
