@@ -94,6 +94,10 @@
       this.previewPhotoSize = '';
       this.loadMoreButtonEl = null;
       this.loadMoreActionEl = null;
+      this.loadMorePlusEl = null;
+      this.loadMoreTryEl = null;
+      this.loadMoreTryTextEl = null;
+      this.loadMoreTryIconEl = null;
       this.totalObservations = null;
       this.totalSpecies = null;
       this.statsEl = null;
@@ -411,6 +415,7 @@
       this.currentCols = cols;
       this.gridEl.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
       this.gridEl.style.gap = `${gap}px`;
+      this.updateLoadMoreTryLayout();
     }
 
     scheduleGridMetrics(){
@@ -988,6 +993,7 @@
         this.gridEl.appendChild(this.loadMoreButtonEl);
       }
       this.loadMoreButtonEl.hidden = false;
+      this.updateLoadMoreTryLayout();
     }
 
     syncLoadMoreTileState(){
@@ -997,6 +1003,49 @@
         this.loadMoreActionEl.setAttribute('aria-busy', this.isLoadingMore ? 'true' : 'false');
       }
       this.loadMoreButtonEl.classList.toggle('is-loading', this.isLoadingMore);
+      this.updateLoadMoreControlIconSizing();
+    }
+
+    updateLoadMoreTryLayout(){
+      if(!this.loadMoreTryEl || !this.loadMoreTryTextEl) return;
+
+      const iconEl = this.loadMoreTryEl.querySelector('.inat-w-load-more-try-icon');
+      this.loadMoreTryIconEl = iconEl || null;
+      if(!iconEl){
+        this.loadMoreTryEl.classList.remove('is-icon-only');
+        this.updateLoadMoreControlIconSizing();
+        return;
+      }
+
+      this.loadMoreTryEl.classList.remove('is-icon-only');
+      const textIsClipped = (this.loadMoreTryTextEl.scrollWidth - this.loadMoreTryTextEl.clientWidth) > 1;
+      this.loadMoreTryEl.classList.toggle('is-icon-only', textIsClipped);
+      this.updateLoadMoreControlIconSizing();
+    }
+
+    updateLoadMoreControlIconSizing(){
+      if(this.loadMoreActionEl && this.loadMorePlusEl){
+        const actionSize = Math.min(
+          this.loadMoreActionEl.clientWidth || 0,
+          this.loadMoreActionEl.clientHeight || 0
+        );
+        if(actionSize > 0){
+          const plusSize = Math.max(14, Math.min(52, Math.round(actionSize * 0.70)));
+          this.loadMoreActionEl.style.setProperty('--inat-load-more-plus-size', `${plusSize}px`);
+        }
+      }
+
+      if(this.loadMoreTryEl && this.loadMoreTryIconEl){
+        const trySize = Math.min(
+          this.loadMoreTryEl.clientWidth || 0,
+          this.loadMoreTryEl.clientHeight || 0
+        );
+        if(trySize > 0){
+          const iconRatio = this.loadMoreTryEl.classList.contains('is-icon-only') ? 0.54 : 0.38;
+          const iconSize = Math.max(10, Math.min(36, Math.round(trySize * iconRatio)));
+          this.loadMoreTryEl.style.setProperty('--inat-load-more-try-icon-size', `${iconSize}px`);
+        }
+      }
     }
 
     createObservationTile(obs, photoAssetSize){
@@ -1079,7 +1128,9 @@
       tryIcon.alt = '';
       tryIcon.setAttribute('aria-hidden', 'true');
       tryIcon.addEventListener('error', () => {
+        this.loadMoreTryIconEl = null;
         tryIcon.remove();
+        this.updateLoadMoreTryLayout();
       });
       const tryText = document.createElement('span');
       tryText.textContent = 'Try it out!';
@@ -1088,6 +1139,10 @@
       tile.appendChild(tryLink);
 
       this.loadMoreActionEl = button;
+      this.loadMorePlusEl = plus;
+      this.loadMoreTryEl = tryLink;
+      this.loadMoreTryTextEl = tryText;
+      this.loadMoreTryIconEl = tryIcon;
 
       return tile;
     }

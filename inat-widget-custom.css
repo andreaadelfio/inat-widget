@@ -256,7 +256,8 @@
   align-items:stretch;
   justify-items:stretch;
   width:100%;
-  overflow:visible;
+  min-width:0;
+  overflow:hidden;
   border:0;
   background:transparent;
   color:var(--inat-link);
@@ -267,12 +268,14 @@
 }
 
 .inat-w-load-more-action{
+  --inat-load-more-plus-size:32px;
   appearance:none;
   border:1px dashed rgba(23,32,51,0.28);
   border-radius:calc(var(--inat-radius-sm) - 3px);
   background:rgba(255,255,255,0.52);
   color:var(--inat-link);
   width:100%;
+  min-width:0;
   min-height:0;
   height:100%;
   display:flex;
@@ -284,18 +287,20 @@
 }
 
 .inat-w-load-more-plus{
-  font-size:32px;
+  font-size:var(--inat-load-more-plus-size);
   line-height:1;
   font-weight:700;
   transform:translateY(-1px);
 }
 
 .inat-w-load-more-try{
+  --inat-load-more-try-icon-size:13px;
   display:flex;
   align-items:center;
   justify-content:center;
   gap:6px;
   width:100%;
+  min-width:0;
   height:100%;
   border:1px dashed rgba(23,32,51,0.28);
   border-radius:calc(var(--inat-radius-sm) - 3px);
@@ -306,11 +311,27 @@
   font-weight:700;
   letter-spacing:0.02em;
   padding:6px 8px;
+  overflow:hidden;
+}
+
+.inat-w-load-more-try > span{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.inat-w-load-more-try.is-icon-only{
+  gap:0;
+}
+
+.inat-w-load-more-try.is-icon-only > span{
+  display:none;
 }
 
 .inat-w-load-more-try-icon{
-  width:13px;
-  height:13px;
+  width:var(--inat-load-more-try-icon-size);
+  height:var(--inat-load-more-try-icon-size);
   object-fit:contain;
   display:block;
   flex:0 0 auto;
