@@ -48,6 +48,8 @@ Widget JavaScript/CSS standalone per mostrare osservazioni iNaturalist.
 | `data-inat-show-title` | `true` | boolean |
 | `data-inat-show-stats` | `false` | boolean |
 | `data-inat-cache` | `true` | boolean |
+| `data-inat-lazy` | `true` | boolean |
+| `data-inat-lazy-root-margin` | `300px 0px` | stringa CSS `rootMargin` |
 | `data-inat-padding` | `14` | intero `0..50` |
 | `data-inat-radius` | `14` | intero `0..50` |
 
@@ -65,6 +67,11 @@ Nota su cache:
 - il widget usa `sessionStorage` per cache durante la sessione (tab aperta) di prima pagina osservazioni e totale specie.
 - di default la cache e attiva (`data-inat-cache="true"`).
 - puoi disattivarla con `data-inat-cache="false"`.
+
+Nota su lazy init:
+- di default il fetch parte quando il widget entra in viewport (`data-inat-lazy="true"`).
+- puoi disattivarlo con `data-inat-lazy="false"`.
+- `data-inat-lazy-root-margin` controlla l'anticipo del preload (es. `300px 0px`).
 
 ## Filtri opzionali
 

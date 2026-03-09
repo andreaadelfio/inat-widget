@@ -68,6 +68,8 @@
       this.showTitle = this.readBool('inatShowTitle', true);
       this.showStats = this.readBool('inatShowStats', false);
       this.cacheEnabled = this.readBool('inatCache', true);
+      this.lazyLoad = this.readBool('inatLazy', true);
+      this.lazyRootMargin = this.readString('inatLazyRootMargin') || '300px 0px';
 
       this.padding = this.readInt('inatPadding', 14, 0, 50);
       this.borderRadius = this.readInt('inatRadius', 14, 0, 50);
@@ -86,19 +88,23 @@
       this.visibleSlots = this.getInitialVisibleSlots();
       this.isLoadingMore = false;
       this.observationItemEls = [];
+      this.observationImageEls = [];
       this.previewPhotoSize = '';
       this.loadMoreButtonEl = null;
       this.totalObservations = null;
       this.totalSpecies = null;
       this.statsEl = null;
+      this.statsObservationsValueEl = null;
+      this.statsSpeciesValueEl = null;
       this.headerEl = null;
       this.headerLeftEl = null;
       this.gridMetricsRaf = null;
+      this.lazyObserver = null;
+      this.hasStarted = false;
 
       ensureStylesheet();
       this.renderShell();
-      this.bindViewportHandlers();
-      this.fetchObservations();
+      this.setupLazyInit();
     }
 
     readString(name){
@@ -230,6 +236,41 @@
         return Math.max(minSlots, Math.max(1, this.rows || 1) * fallbackCols);
       }
       return Math.max(minSlots, this.limit);
+    }
+
+    start(){
+      if(this.hasStarted) return;
+      this.hasStarted = true;
+      this.bindViewportHandlers();
+      this.fetchObservations();
+    }
+
+    setupLazyInit(){
+      if(
+        !this.lazyLoad
+        || typeof window === 'undefined'
+        || typeof window.IntersectionObserver !== 'function'
+      ){
+        this.start();
+        return;
+      }
+
+      try{
+        this.lazyObserver = new window.IntersectionObserver((entries) => {
+          const entry = entries.find((item) => item.target === this.container);
+          if(!entry || !entry.isIntersecting) return;
+          this.lazyObserver?.disconnect();
+          this.lazyObserver = null;
+          this.start();
+        }, {
+          root: null,
+          rootMargin: this.lazyRootMargin,
+          threshold: 0.01
+        });
+        this.lazyObserver.observe(this.container);
+      }catch(error){
+        this.start();
+      }
     }
 
     bindViewportHandlers(){
@@ -482,9 +523,7 @@
       headerRight.appendChild(logoLink);
 
       if(this.showStats){
-        this.statsEl = document.createElement('div');
-        this.statsEl.className = 'inat-w-stats inat-w-stats-header';
-        headerLeft.appendChild(this.statsEl);
+        this.createStatsShell(headerLeft);
       }
 
       header.appendChild(headerLeft);
@@ -714,31 +753,63 @@
       return new Intl.NumberFormat().format(safeValue);
     }
 
+    createStatsShell(parentEl){
+      if(!parentEl || this.statsEl) return;
+
+      const statsWrap = document.createElement('div');
+      statsWrap.className = 'inat-w-stats inat-w-stats-header';
+
+      const observationsCard = document.createElement('div');
+      observationsCard.className = 'inat-w-stats-card inat-w-stats-observations';
+      observationsCard.setAttribute('aria-label', 'Total observations');
+
+      const observationsValue = document.createElement('span');
+      observationsValue.className = 'inat-w-stats-value';
+      const observationsLabel = document.createElement('span');
+      observationsLabel.className = 'inat-w-stats-label';
+      observationsLabel.textContent = 'Observations';
+      observationsCard.appendChild(observationsValue);
+      observationsCard.appendChild(observationsLabel);
+
+      const speciesCard = document.createElement('div');
+      speciesCard.className = 'inat-w-stats-card inat-w-stats-species';
+      speciesCard.setAttribute('aria-label', 'Total species observed');
+
+      const speciesValue = document.createElement('span');
+      speciesValue.className = 'inat-w-stats-value';
+      const speciesLabel = document.createElement('span');
+      speciesLabel.className = 'inat-w-stats-label';
+      speciesLabel.textContent = 'Species';
+      speciesCard.appendChild(speciesValue);
+      speciesCard.appendChild(speciesLabel);
+
+      statsWrap.appendChild(observationsCard);
+      statsWrap.appendChild(speciesCard);
+      parentEl.appendChild(statsWrap);
+
+      this.statsEl = statsWrap;
+      this.statsObservationsValueEl = observationsValue;
+      this.statsSpeciesValueEl = speciesValue;
+    }
+
     renderStats(){
       if(!this.showStats) return;
       if(!this.statsEl){
-        this.statsEl = document.createElement('div');
-        this.statsEl.className = 'inat-w-stats inat-w-stats-header';
         if(this.headerLeftEl){
-          this.headerLeftEl.appendChild(this.statsEl);
+          this.createStatsShell(this.headerLeftEl);
         }else if(this.headerEl){
-          this.headerEl.appendChild(this.statsEl);
+          this.createStatsShell(this.headerEl);
         }
       }
 
       const observations = this.formatCount(this.totalObservations);
       const species = this.formatCount(this.totalSpecies);
-
-      this.statsEl.innerHTML = `
-        <div class="inat-w-stats-card inat-w-stats-observations" aria-label="Total observations">
-          <span class="inat-w-stats-value">${this.escapeHtml(observations)}</span>
-          <span class="inat-w-stats-label">Observations</span>
-        </div>
-        <div class="inat-w-stats-card inat-w-stats-species" aria-label="Total species observed">
-          <span class="inat-w-stats-value">${this.escapeHtml(species)}</span>
-          <span class="inat-w-stats-label">Species</span>
-        </div>
-      `;
+      if(this.statsObservationsValueEl){
+        this.statsObservationsValueEl.textContent = observations;
+      }
+      if(this.statsSpeciesValueEl){
+        this.statsSpeciesValueEl.textContent = species;
+      }
     }
 
     async ensureObservationsCount(minCount){
@@ -868,8 +939,9 @@
         const index = this.observationItemEls.length;
         const obs = this.observations[index];
         if(!obs) break;
-        const item = this.createObservationTile(obs, photoAssetSize);
+        const {item, imageEl} = this.createObservationTile(obs, photoAssetSize);
         this.observationItemEls.push(item);
+        this.observationImageEls.push(imageEl);
         if(this.loadMoreButtonEl?.parentElement === this.gridEl){
           this.gridEl.insertBefore(item, this.loadMoreButtonEl);
         }else{
@@ -879,10 +951,9 @@
     }
 
     updateObservationTileImages(photoAssetSize){
-      this.observationItemEls.forEach((item, index) => {
+      this.observationImageEls.forEach((image, index) => {
         const obs = this.observations[index];
         if(!obs) return;
-        const image = item.querySelector('.inat-w-grid-img');
         if(!image) return;
         if(image.dataset.inatSize === photoAssetSize) return;
         const nextPhoto = this.getPhotoUrl(obs, photoAssetSize);
@@ -928,6 +999,7 @@
       item.href = this.getPhotoUrl(obs, 'large') || this.getObservationUrl(obs);
       item.target = '_blank';
       item.rel = 'noopener noreferrer';
+      let imageEl = null;
 
       const photo = this.getPhotoUrl(obs, photoAssetSize);
       if(photo){
@@ -939,6 +1011,7 @@
         image.decoding = 'async';
         image.dataset.inatSize = photoAssetSize;
         item.appendChild(image);
+        imageEl = image;
       }else{
         const fallback = document.createElement('div');
         fallback.className = 'inat-w-no-photo';
@@ -963,7 +1036,7 @@
       }
 
       item.appendChild(overlay);
-      return item;
+      return {item, imageEl};
     }
 
     createLoadMoreTile(){
