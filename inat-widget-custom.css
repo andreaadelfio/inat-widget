@@ -112,15 +112,6 @@
   min-width:0;
 }
 
-.inat-w-header-text{
-  white-space:nowrap;
-  text-align:right;
-  font-weight:700;
-  color:var(--inat-link);
-  font-size:16px;
-  line-height:1.2;
-}
-
 .inat-w-header-logo{
   height:18px;
   width:18px;
@@ -407,14 +398,6 @@ a.inat-w-grid-item:focus-visible{
     justify-content:center;
     align-items:center;
     gap:2px;
-  }
-
-  .inat-w-header-text{
-    text-align:center;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-    max-width:none;
   }
 }
 

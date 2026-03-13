@@ -64,9 +64,7 @@
       this.orderBy = this.readString('inatOrderBy') || 'observed_on';
       this.order = this.readEnum('inatOrder', ['asc', 'desc'], 'desc');
 
-      this.title = this.readString('inatTitle') || 'View my observations';
       this.userIcon = this.readString('inatUserIcon');
-      this.showTitle = this.readBool('inatShowTitle', true);
       this.showStats = this.readBool('inatShowStats', false);
       this.cacheEnabled = this.readBool('inatCache', true);
       this.lazyLoad = this.readBool('inatLazy', true);
@@ -97,6 +95,8 @@
       this.totalObservations = null;
       this.totalSpecies = null;
       this.statsEl = null;
+      this.statsObservationsCardEl = null;
+      this.statsSpeciesCardEl = null;
       this.statsObservationsValueEl = null;
       this.statsSpeciesValueEl = null;
       this.headerEl = null;
@@ -502,16 +502,6 @@
       const headerRight = document.createElement('div');
       headerRight.className = 'inat-w-header-right';
 
-      if(this.showTitle){
-        const titleLink = document.createElement('a');
-        titleLink.className = 'inat-w-header-text inat-w-source-link';
-        titleLink.href = sourceUrl;
-        titleLink.target = '_blank';
-        titleLink.rel = 'noopener noreferrer';
-        titleLink.textContent = this.title;
-        headerRight.appendChild(titleLink);
-      }
-
       const logoLink = document.createElement('a');
       logoLink.className = 'inat-w-logo-link';
       logoLink.href = 'https://www.inaturalist.org';
@@ -574,6 +564,39 @@
         return this.source;
       }
       return 'iNaturalist user';
+    }
+
+    getStatsUserId(){
+      if(this.sourceType === 'user' && this.source){
+        const normalizedSource = String(this.source).trim();
+        const match = normalizedSource.match(/observations\/([^/?#]+)/i);
+        const userId = match ? match[1] : normalizedSource;
+        const rawUserId = String(userId || '');
+        let decodedUserId = rawUserId;
+        try{
+          decodedUserId = decodeURIComponent(rawUserId);
+        }catch(error){
+          decodedUserId = rawUserId;
+        }
+        return decodedUserId.replace(/^@/, '').trim();
+      }
+
+      const observedUserId = this.observations?.[0]?.user?.login;
+      return String(observedUserId || '').trim();
+    }
+
+    buildStatsLink(showSpeciesView){
+      const params = new URLSearchParams();
+      params.set('subview', 'map');
+      const userId = this.getStatsUserId();
+      if(userId){
+        params.set('user_id', userId);
+      }
+      params.set('verifiable', 'any');
+      if(showSpeciesView){
+        params.set('view', 'species');
+      }
+      return `https://www.inaturalist.org/observations?${params.toString()}`;
     }
 
     getHeaderUserIcon(){
@@ -763,8 +786,11 @@
       const statsWrap = document.createElement('div');
       statsWrap.className = 'inat-w-stats inat-w-stats-header';
 
-      const observationsCard = document.createElement('div');
+      const observationsCard = document.createElement('a');
       observationsCard.className = 'inat-w-stats-card inat-w-stats-observations';
+      observationsCard.href = this.buildStatsLink(false);
+      observationsCard.target = '_blank';
+      observationsCard.rel = 'noopener noreferrer';
       observationsCard.setAttribute('aria-label', 'Total observations');
 
       const observationsValue = document.createElement('span');
@@ -775,8 +801,11 @@
       observationsCard.appendChild(observationsValue);
       observationsCard.appendChild(observationsLabel);
 
-      const speciesCard = document.createElement('div');
+      const speciesCard = document.createElement('a');
       speciesCard.className = 'inat-w-stats-card inat-w-stats-species';
+      speciesCard.href = this.buildStatsLink(true);
+      speciesCard.target = '_blank';
+      speciesCard.rel = 'noopener noreferrer';
       speciesCard.setAttribute('aria-label', 'Total species observed');
 
       const speciesValue = document.createElement('span');
@@ -792,6 +821,8 @@
       parentEl.appendChild(statsWrap);
 
       this.statsEl = statsWrap;
+      this.statsObservationsCardEl = observationsCard;
+      this.statsSpeciesCardEl = speciesCard;
       this.statsObservationsValueEl = observationsValue;
       this.statsSpeciesValueEl = speciesValue;
     }
@@ -808,6 +839,12 @@
 
       const observations = this.formatCount(this.totalObservations);
       const species = this.formatCount(this.totalSpecies);
+      if(this.statsObservationsCardEl){
+        this.statsObservationsCardEl.href = this.buildStatsLink(false);
+      }
+      if(this.statsSpeciesCardEl){
+        this.statsSpeciesCardEl.href = this.buildStatsLink(true);
+      }
       if(this.statsObservationsValueEl){
         this.statsObservationsValueEl.textContent = observations;
       }

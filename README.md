@@ -44,8 +44,6 @@ Widget JavaScript/CSS standalone per mostrare osservazioni iNaturalist.
 | `data-inat-limit` | `10` | intero `1..50` |
 | `data-inat-order-by` | `observed_on` | stringa API iNaturalist |
 | `data-inat-order` | `desc` | `asc`, `desc` |
-| `data-inat-title` | `View my observations` | stringa |
-| `data-inat-show-title` | `true` | boolean |
 | `data-inat-show-stats` | `false` | boolean |
 | `data-inat-cache` | `true` | boolean |
 | `data-inat-lazy` | `true` | boolean |

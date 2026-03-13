@@ -194,20 +194,14 @@
           </div>
         </div>
 
-        <div class="row-2">
-          <div class="row">
-            <label for="theme">Theme</label>
-            <select id="theme" name="theme">
-              <option value="light">light</option>
-              <option value="dark">dark</option>
-              <option value="transparent-light">transparent-light</option>
-              <option value="transparent-dark">transparent-dark</option>
-            </select>
-          </div>
-          <div class="row">
-            <label for="title">Title</label>
-            <input id="title" name="title" value="View my observations">
-          </div>
+        <div class="row">
+          <label for="theme">Theme</label>
+          <select id="theme" name="theme">
+            <option value="light">light</option>
+            <option value="dark">dark</option>
+            <option value="transparent-light">transparent-light</option>
+            <option value="transparent-dark">transparent-dark</option>
+          </select>
         </div>
 
         <div class="row-2">
@@ -235,11 +229,7 @@
           </div>
         </div>
 
-        <div class="row-2">
-          <label class="check">
-            <input id="showTitle" name="showTitle" type="checkbox" checked>
-            show title
-          </label>
+        <div class="row">
           <label class="check">
             <input id="showStats" name="showStats" type="checkbox">
             show stats
@@ -306,12 +296,10 @@
         rows: '2',
         limit: '10',
         theme: 'light',
-        title: 'View my observations',
         orderBy: 'observed_on',
         order: 'desc',
         radius: '14',
         padding: '14',
-        showTitle: true,
         showStats: false,
         useCache: true,
         lazyLoad: true,
@@ -344,12 +332,10 @@
         form.rows.value = values.rows;
         form.limit.value = values.limit;
         form.theme.value = values.theme;
-        form.title.value = values.title;
         form.orderBy.value = values.orderBy;
         form.order.value = values.order;
         form.radius.value = values.radius;
         form.padding.value = values.padding;
-        form.showTitle.checked = values.showTitle;
         form.showStats.checked = values.showStats;
         form.useCache.checked = values.useCache;
         form.lazyLoad.checked = values.lazyLoad;
@@ -367,12 +353,10 @@
           rows: form.rows.value.trim(),
           limit: form.limit.value.trim(),
           theme: form.theme.value.trim(),
-          title: form.title.value.trim(),
           orderBy: form.orderBy.value.trim(),
           order: form.order.value.trim(),
           radius: form.radius.value.trim(),
           padding: form.padding.value.trim(),
-          showTitle: form.showTitle.checked,
           showStats: form.showStats.checked,
           useCache: form.useCache.checked,
           lazyLoad: form.lazyLoad.checked,
@@ -394,12 +378,10 @@
           `  data-inat-rows="${escapeAttr(opts.rows)}"`,
           `  data-inat-limit="${escapeAttr(opts.limit)}"`,
           `  data-inat-theme="${escapeAttr(opts.theme)}"`,
-          `  data-inat-title="${escapeAttr(opts.title)}"`,
           `  data-inat-order-by="${escapeAttr(opts.orderBy)}"`,
           `  data-inat-order="${escapeAttr(opts.order)}"`,
           `  data-inat-radius="${escapeAttr(opts.radius)}"`,
           `  data-inat-padding="${escapeAttr(opts.padding)}"`,
-          `  data-inat-show-title="${opts.showTitle}"`,
           `  data-inat-show-stats="${opts.showStats}"`,
           `  data-inat-cache="${opts.useCache}"`,
           `  data-inat-lazy="${opts.lazyLoad}"`,
